@@ -6,7 +6,7 @@ import struct
 
 import nacl
 
-from constants import *
+from noise.constants import *
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +52,5 @@ def get_packed_protocol_id(name):
     return protocol_id.pack(psk_byte, pattern_byte, cipher_byte, dh_byte, hashing_byte)
 
 s.send(get_packed_protocol_id(noise_name))
-s.send.
-
+# s.send.
 # import ipdb; ipdb.set_trace()
