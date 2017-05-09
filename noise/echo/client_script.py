@@ -1,12 +1,8 @@
-import base64
-import socket
-
 import logging
+import socket
 import struct
 
-import nacl
-
-from noise.constants import *
+from noise.echo.echo_constants import PSK, PATTERN, CIPHER, DH, HASH
 
 logger = logging.getLogger(__name__)
 

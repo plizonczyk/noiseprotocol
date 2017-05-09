@@ -1,25 +1,29 @@
+from noise.constants import Empty
+
+
 class CipherState(object):
     """
     
     """
     def __init__(self):
-        self.k = None
+        self.k = Empty()
         self.n = None
 
     def initialize_key(self, key):
         """
-        
-        :param key: 
+
+        :param key:
         :return: 
         """
-        pass
+        self.k = key
+        self.n = 0
 
     def has_key(self):
         """
         
-        :return: 
+        :return: True if self.k is not an instance of Empty
         """
-        return self.k is not None
+        return not isinstance(self.k, Empty)
 
     def encrypt_with_ad(self, ad, plaintext):
         """
@@ -98,13 +102,14 @@ class HandshakeState(object):
     
     """
     def __init__(self):
+        self.symmetric_state = Empty()
         self.handshake_pattern = None
         self.initiator = None
         self.prologue = b''
-        self.s = None
-        self.e = None
-        self.rs = None
-        self.re = None
+        self.s = Empty()
+        self.e = Empty()
+        self.rs = Empty()
+        self.re = Empty()
 
     def initialize(self, handshake_pattern, initiator, prologue=b'', s=None, e=None, rs=None, re=None):
         """
