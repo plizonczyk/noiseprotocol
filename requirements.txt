@@ -1,2 +1,2 @@
-nose2
+pytest
 pynacl
