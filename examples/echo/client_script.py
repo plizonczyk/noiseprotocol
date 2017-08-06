@@ -2,7 +2,7 @@ import logging
 import socket
 import struct
 
-from noise.echo.echo_constants import PSK, PATTERN, CIPHER, DH, HASH
+from examples.echo.echo_constants import PSK, PATTERN, CIPHER, DH, HASH
 
 logger = logging.getLogger(__name__)
 
