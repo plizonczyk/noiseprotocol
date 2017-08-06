@@ -1,4 +1,4 @@
-from noise.constants import TOKEN_E, TOKEN_S, TOKEN_EE, TOKEN_ES, TOKEN_SE, TOKEN_SS, TOKEN_PSK
+from .constants import TOKEN_E, TOKEN_S, TOKEN_EE, TOKEN_ES, TOKEN_SE, TOKEN_SS, TOKEN_PSK
 
 
 class Pattern(object):
@@ -14,6 +14,15 @@ class Pattern(object):
     ]
     # TODO Comment
     tokens = []
+
+    def __init__(self):
+        self.has_pre_messages = any(map(lambda x: len(x) > 0, self.pre_messages))
+
+    def get_initiator_pre_messages(self) -> list:
+        return self.pre_messages[0]
+
+    def get_responder_pre_messages(self) -> list:
+        return self.pre_messages[1]
 
 
 # One-way patterns
