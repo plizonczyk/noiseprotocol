@@ -168,3 +168,22 @@ class PatternIX(Pattern):
         [TOKEN_E, TOKEN_S],
         [TOKEN_E, TOKEN_EE, TOKEN_SE, TOKEN_S, TOKEN_ES]
     ]
+
+
+patterns_map = {
+    'PatternN': PatternN,
+    'PatternK': PatternN,
+    'PatternX': PatternN,
+    'PatternNN': PatternNN,
+    'PatternKN': PatternKN,
+    'PatternNK': PatternNK,
+    'PatternKK': PatternKK,
+    'PatternNX': PatternNX,
+    'PatternKX': PatternKX,
+    'PatternXN': PatternXN,
+    'PatternIN': PatternIN,
+    'PatternXK': PatternXK,
+    'PatternIK': PatternIK,
+    'PatternXX': PatternXX,
+    'PatternIX': PatternIX,
+}
