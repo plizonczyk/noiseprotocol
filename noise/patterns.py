@@ -1,3 +1,5 @@
+from typing import List
+
 from .constants import TOKEN_E, TOKEN_S, TOKEN_EE, TOKEN_ES, TOKEN_SE, TOKEN_SS, TOKEN_PSK
 
 
@@ -8,12 +10,13 @@ class Pattern(object):
     # As per specification, if both parties have pre-messages, the initiator is listed first. To reduce complexity,
     # pre_messages shall be a list of two lists:
     # the first for the initiator's pre-messages, the second for the responder
-    pre_messages = [
+    pre_messages: List[list] = [
         [],
         []
     ]
-    # TODO Comment
-    tokens = []
+
+    # List of lists of valid tokens, alternating between tokens for initiator and responder
+    tokens: List[list] = []
 
     def __init__(self):
         self.has_pre_messages = any(map(lambda x: len(x) > 0, self.pre_messages))
@@ -23,6 +26,30 @@ class Pattern(object):
 
     def get_responder_pre_messages(self) -> list:
         return self.pre_messages[1]
+
+    def apply_pattern_modifiers(self, modifiers: List[str]) -> None:
+        # Applies given pattern modifiers to self.tokens of the Pattern instance.
+        for modifier in modifiers:
+            if modifier.startswith('psk'):
+                try:
+                    index = int(modifier.replace('psk', '', 1))
+                except ValueError:
+                    raise ValueError(f'Improper psk modifier {modifier}')
+
+                if index // 2 > len(self.tokens):
+                    raise ValueError(f'Modifier {modifier} cannot be applied - pattern has not enough messages')
+
+                # Add TOKEN_PSK in the correct place in the correct message
+                if index % 2 == 0:
+                    self.tokens[index//2].insert(0, TOKEN_PSK)
+                else:
+                    self.tokens[index//2].append(TOKEN_PSK)
+
+            elif modifier == 'fallback':
+                raise NotImplementedError  # TODO implement
+
+            else:
+                raise ValueError(f'Unknown pattern modifier {modifier}')
 
 
 # One-way patterns

@@ -49,10 +49,10 @@ class SymmetricState(object):
     
     """
     @classmethod
-    def initialize_symmetric(cls, protocol_name) -> 'SymmetricState':
+    def initialize_symmetric(cls, noise_protocol: 'NoiseProtocol') -> 'SymmetricState':
         """
         
-        :param protocol_name: 
+        :param noise_protocol:
         :return: 
         """
         instance = cls()
@@ -104,7 +104,7 @@ class HandshakeState(object):
     The initialize() function takes additional required argument - protocol_name - to provide it to SymmetricState.
     """
     @classmethod
-    def initialize(cls, handshake_pattern: 'Pattern', protocol_name: 'NoiseProtocol', initiator: bool,
+    def initialize(cls, noise_protocol: 'NoiseProtocol', handshake_pattern: 'Pattern', initiator: bool,
                    prologue: bytes=b'', s: bytes=None, e: bytes=None, rs: bytes=None,
                    re: bytes=None) -> 'HandshakeState':
         """
@@ -112,7 +112,7 @@ class HandshakeState(object):
         Comments below are mostly copied from specification.
 
         :param handshake_pattern: a valid Pattern instance (see Section 7 of specification (rev 32))
-        :param protocol_name: a valid NoiseProtocol instance
+        :param noise_protocol: a valid NoiseProtocol instance
         :param initiator: boolean indicating the initiator or responder role
         :param prologue: byte sequence which may be zero-length, or which may contain context information that both
         parties want to confirm is identical
@@ -128,11 +128,11 @@ class HandshakeState(object):
         # Originally in specification:
         # "Derives a protocol_name byte sequence by combining the names for
         # the handshake pattern and crypto functions, as specified in Section 8."
-        # Instead, we supply the protocol name to the function. It should already be validated. We only check if the
-        # handshake pattern specified as an argument is the same as in the protocol name
+        # Instead, we supply the NoiseProtocol to the function. The protocol name should already be validated.
+        # We only check if the handshake pattern specified as an argument is the same as in the protocol name
 
-        # Calls InitializeSymmetric(protocol_name)
-        instance.symmetric_state = SymmetricState.initialize_symmetric(protocol_name)
+        # Calls InitializeSymmetric(noise_protocol)
+        instance.symmetric_state = SymmetricState.initialize_symmetric(noise_protocol)
 
         # Calls MixHash(prologue)
         instance.symmetric_state.mix_hash(prologue)
