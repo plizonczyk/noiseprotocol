@@ -16,7 +16,7 @@ def prepare_test_vectors():
     vectors = []
     for path in vector_files:
         with open(os.path.join(os.path.dirname(__file__), path)) as fd:
-            logging.info(f'Reading vectors from file {path}')
+            logging.info('Reading vectors from file {}'.format(path))
             vectors.extend(json.load(fd))
     return vectors
 
@@ -27,7 +27,7 @@ def vector(request):
 
 
 def test_vector(vector):
-    logging.info(f"Testing vector {vector['protocol_name']}")
+    logging.info('Testing vector {}'.format(vector['protocol_name']))
     init_protocol = NoiseProtocol(vector['protocol_name'])
     resp_protocol = NoiseProtocol(vector['protocol_name'])
     initiator = HandshakeState.initialize(noise_protocol=init_protocol, handshake_pattern=init_protocol.pattern,

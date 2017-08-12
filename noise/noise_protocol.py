@@ -59,7 +59,7 @@ class NoiseProtocol(object):
     def _parse_protocol_name(self) -> Tuple[dict, list]:
         unpacked = self.name.split('_')
         if unpacked[0] != 'Noise':
-            raise ValueError(f'Noise Protocol name shall begin with Noise! Provided: {self.name}')
+            raise ValueError('Noise Protocol name shall begin with Noise! Provided: {}'.format(self.name))
 
         # Extract pattern name and pattern modifiers
         pattern = ''
@@ -85,7 +85,8 @@ class NoiseProtocol(object):
         for key, map_dict in self.methods.items():
             func = map_dict.get(data[key])
             if not func:
-                raise ValueError(f'Unknown {key} in Noise Protocol name, given {data[key]}, known {" ".join(map_dict)}')
+                raise ValueError('Unknown {} in Noise Protocol name, given {}, known {}'.format(
+                    key, data[key], " ".join(map_dict)))
             mapped_data[key] = func
 
         return mapped_data, modifiers

@@ -34,10 +34,10 @@ class Pattern(object):
                 try:
                     index = int(modifier.replace('psk', '', 1))
                 except ValueError:
-                    raise ValueError(f'Improper psk modifier {modifier}')
+                    raise ValueError('Improper psk modifier {}'.format(modifier))
 
                 if index // 2 > len(self.tokens):
-                    raise ValueError(f'Modifier {modifier} cannot be applied - pattern has not enough messages')
+                    raise ValueError('Modifier {} cannot be applied - pattern has not enough messages'.format(modifier))
 
                 # Add TOKEN_PSK in the correct place in the correct message
                 if index % 2 == 0:
@@ -49,7 +49,7 @@ class Pattern(object):
                 raise NotImplementedError  # TODO implement
 
             else:
-                raise ValueError(f'Unknown pattern modifier {modifier}')
+                raise ValueError('Unknown pattern modifier {}'.format(modifier))
 
 
 # One-way patterns
