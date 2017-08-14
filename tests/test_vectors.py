@@ -14,8 +14,9 @@ vector_files = ['vectors/cacophony.txt']
 
 # As in test vectors specification (https://github.com/noiseprotocol/noise_wiki/wiki/Test-vectors)
 # We use this to cast read strings into bytes
-string_fields = ['protocol_name', 'init_prologue', 'init_static', 'init_ephemeral', 'init_remote_static',
-                 'resp_prologue', 'resp_static', 'resp_ephemeral', 'resp_remote_static', 'handshake_hash']
+byte_fields = ['protocol_name']
+hexbyte_fields = ['init_prologue', 'init_static', 'init_ephemeral', 'init_remote_static', 'resp_static',
+                  'resp_prologue', 'resp_ephemeral', 'resp_remote_static', 'handshake_hash']
 list_fields = ['init_psks', 'resp_psks']
 dict_field = 'messages'
 
@@ -28,9 +29,13 @@ def _prepare_test_vectors():
             vectors_list = json.load(fd)
 
         for vector in vectors_list:
+            if '_448_' in vector['protocol_name']:
+                continue  # TODO REMOVE WHEN ed448 IS IMPLEMENTED
             for key, value in vector.copy().items():
-                if key in string_fields:
+                if key in byte_fields:
                     vector[key] = value.encode()
+                if key in hexbyte_fields:
+                    vector[key] = bytes.fromhex(value)
                 if key in list_fields:
                     vector[key] = [k.encode() for k in value]
                 if key == dict_field:
@@ -54,9 +59,9 @@ class TestVectors(object):
                 role_key = role + '_' + key
                 if role_key in vector:
                     if key in ['static', 'ephemeral']:
-                        kwargs[role][kwarg] = KeyPair(private=vector[role_key])
-                    else:
-                        kwargs[role][kwarg] = KeyPair(public=vector[role_key])
+                        kwargs[role][kwarg] = KeyPair._25519_from_private_bytes(vector[role_key])  # TODO unify after adding 448
+                    elif key == 'remote_static':
+                        kwargs[role][kwarg] = KeyPair._25519_from_public_bytes(vector[role_key])  # TODO unify after adding 448
         return kwargs
 
     def test_vector(self, vector):
