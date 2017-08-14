@@ -13,7 +13,7 @@ class CipherState(object):
         self.noise_protocol = None
 
     @classmethod
-    def initialize_key(cls, key, noise_protocol: 'NoiseProtocol', create=True) -> 'CipherState':  # TODO: fix for split case
+    def initialize_key(cls, key, noise_protocol: 'NoiseProtocol') -> 'CipherState':  # TODO: fix for split case
         """
 
         :param key:
@@ -34,23 +34,40 @@ class CipherState(object):
         """
         return not isinstance(self.k, Empty)
 
-    def encrypt_with_ad(self, ad, plaintext):
+    def encrypt_with_ad(self, ad: bytes, plaintext: bytes) -> bytes:
         """
-        
-        :param ad: 
-        :param plaintext: 
-        :return: 
+        If k is non-empty returns ENCRYPT(k, n++, ad, plaintext). Otherwise returns plaintext.
+        :param ad: bytes sequence
+        :param plaintext: bytes sequence
+        :return: ciphertext bytes sequence
         """
-        pass
+        if self.n == 2**64 - 1:
+            raise Exception('Nonce has depleted!')
 
-    def decrypt_with_ad(self, ad, plaintext):
+        if not self.has_key():
+            return plaintext
+
+        ciphertext = self.noise_protocol.cipher.encrypt(self.k, self.n, ad, plaintext)
+        self.n = self.n + 1
+        return ciphertext
+
+    def decrypt_with_ad(self, ad: bytes, ciphertext: bytes) -> bytes:
         """
-        
-        :param ad: 
-        :param plaintext: 
-        :return: 
+        If k is non-empty returns DECRYPT(k, n++, ad, ciphertext). Otherwise returns ciphertext. If an authentication
+        failure occurs in DECRYPT() then n is not incremented and an error is signaled to the caller.
+        :param ad: bytes sequence
+        :param ciphertext: bytes sequence
+        :return: plaintext bytes sequence
         """
-        pass
+        if self.n == 2**64 - 1:
+            raise Exception('Nonce has depleted!')
+
+        if not self.has_key():
+            return ciphertext
+
+        plaintext = self.noise_protocol.cipher.decrypt(self.k, self.n, ad, ciphertext)
+        self.n = self.n + 1
+        return plaintext
 
 
 class SymmetricState(object):
