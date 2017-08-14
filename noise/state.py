@@ -13,7 +13,7 @@ class CipherState(object):
         self.noise_protocol = None
 
     @classmethod
-    def initialize_key(cls, key, noise_protocol: 'NoiseProtocol') -> 'CipherState':
+    def initialize_key(cls, key, noise_protocol: 'NoiseProtocol', create=True) -> 'CipherState':  # TODO: fix for split case
         """
 
         :param key:
@@ -94,43 +94,69 @@ class SymmetricState(object):
 
         return instance
 
-    def mix_key(self, input_key_material):
+    def mix_key(self, input_key_material: bytes):
         """
-        
         :param input_key_material: 
         :return: 
         """
+        # Sets ck, temp_k = HKDF(ck, input_key_material, 2).
+        self.ck, temp_k = self.noise_protocol.hkdf(self.ck, input_key_material, 2)
+        # If HASHLEN is 64, then truncates temp_k to 32 bytes.
+        if self.noise_protocol.hash_fn.hashlen == 64:
+            temp_k = temp_k[:32]
 
-    def mix_hash(self, data):
+        # Calls InitializeKey(temp_k).
+        self.noise_protocol.cipher_state.initialize_key(temp_k)  # TODO check for memory leaks here
+
+    def mix_hash(self, data: bytes):
         """
-        
-        :param data: 
-        :return: 
+        Sets h = HASH(h + data).
+        :param data: bytes sequence
         """
         self.h = self.noise_protocol.hash_fn.hash(data + self.h)
 
-    def encrypt_and_hash(self, plaintext):
+    def encrypt_and_hash(self, plaintext: bytes) -> bytes:
         """
-        
-        :param plaintext: 
-        :return: 
+        Sets ciphertext = EncryptWithAd(h, plaintext), calls MixHash(ciphertext), and returns ciphertext. Note that if
+        k is empty, the EncryptWithAd() call will set ciphertext equal to plaintext.
+        :param plaintext: bytes sequence
+        :return: ciphertext bytes sequence
         """
-        pass
+        ciphertext = self.noise_protocol.cipher_state.encrypt_with_ad(self.h, plaintext)
+        self.mix_hash(ciphertext)
+        return ciphertext
 
-    def decrypt_and_hash(self, ciphertext):
+    def decrypt_and_hash(self, ciphertext: bytes) -> bytes:
         """
-        
-        :param ciphertext: 
-        :return: 
+        Sets plaintext = DecryptWithAd(h, ciphertext), calls MixHash(ciphertext), and returns plaintext. Note that if
+        k is empty, the DecryptWithAd() call will set plaintext equal to ciphertext.
+        :param ciphertext: bytes sequence
+        :return: plaintext bytes sequence
         """
-        pass
+        plaintext = self.noise_protocol.cipher_state.decrypt_with_ad(self.h, ciphertext)
+        self.mix_hash(ciphertext)
+        return plaintext
 
     def split(self):
         """
-        
-        :return: 
+        Returns a pair of CipherState objects for encrypting/decrypting transport messages.
+        :return: tuple (CipherState, CipherState)
         """
-        pass
+        # Sets temp_k1, temp_k2 = HKDF(ck, b'', 2).
+        temp_k1, temp_k2 = self.noise_protocol.hkdf(self.ck, b'', 2)
+
+        # If HASHLEN is 64, then truncates temp_k1 and temp_k2 to 32 bytes.
+        if self.noise_protocol.hash_fn.hashlen == 64:
+            temp_k1 = temp_k1[:32]
+            temp_k2 = temp_k2[:32]
+
+        # Creates two new CipherState objects c1 and c2.
+        # Calls c1.InitializeKey(temp_k1) and c2.InitializeKey(temp_k2).
+        c1 = CipherState.initialize_key(temp_k1, self.noise_protocol)  # TODO WRONG!
+        c2 = CipherState.initialize_key(temp_k2, self.noise_protocol)  # TODO WRONG!
+
+        # Returns the pair (c1, c2).
+        return c1, c2
 
 
 class HandshakeState(object):

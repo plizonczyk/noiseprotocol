@@ -1,7 +1,8 @@
+from functools import partial
 from typing import Tuple
 
 from .constants import MAX_PROTOCOL_NAME_LEN, Empty
-from .functions import dh_map, cipher_map, hash_map, keypair_map, KeyPair25519
+from .functions import dh_map, cipher_map, hash_map, keypair_map, hmac_hash, hkdf
 from .patterns import patterns_map
 
 
@@ -36,6 +37,8 @@ class NoiseProtocol(object):
         self.cipher_fn = mappings['cipher']
         self.hash_fn = mappings['hash']
         self.keypair_fn = mappings['keypair']
+        self.hmac = partial(hmac_hash, algorithm=self.hash_fn.fn)
+        self.hkdf = partial(hkdf, hmac_hash_fn=self.hmac)
 
         self.psks = None  # Placeholder for PSKs
 
