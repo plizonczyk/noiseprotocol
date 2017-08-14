@@ -12,13 +12,32 @@ logger = logging.getLogger(__name__)
 
 vector_files = ['vectors/cacophony.txt']
 
+# As in test vectors specification (https://github.com/noiseprotocol/noise_wiki/wiki/Test-vectors)
+# We use this to cast read strings into bytes
+string_fields = ['protocol_name', 'init_prologue', 'init_static', 'init_ephemeral', 'init_remote_static',
+                 'resp_prologue', 'resp_static', 'resp_ephemeral', 'resp_remote_static', 'handshake_hash']
+list_fields = ['init_psks', 'resp_psks']
+dict_field = 'messages'
+
 
 def _prepare_test_vectors():
     vectors = []
     for path in vector_files:
         with open(os.path.join(os.path.dirname(__file__), path)) as fd:
             logging.info('Reading vectors from file {}'.format(path))
-            vectors.extend(json.load(fd))
+            vectors_list = json.load(fd)
+
+        for vector in vectors_list:
+            for key, value in vector.copy().items():
+                if key in string_fields:
+                    vector[key] = value.encode()
+                if key in list_fields:
+                    vector[key] = [k.encode() for k in value]
+                if key == dict_field:
+                    vector[key] = []
+                    for dictionary in value:
+                        vector[key].append({k: v.encode() for k, v in dictionary.items()})
+            vectors.append(vector)
     return vectors
 
 
@@ -51,10 +70,8 @@ class TestVectors(object):
             init_protocol.set_psks(vector['init_psks'])
             resp_protocol.set_psks(vector['resp_psks'])
 
-        kwargs['init'].update(noise_protocol=init_protocol, handshake_pattern=init_protocol.pattern, initiator=True,
-                              prologue=vector['init_prologue'])
-        kwargs['resp'].update(noise_protocol=resp_protocol, handshake_pattern=resp_protocol.pattern, initiator=False,
-                              prologue=vector['resp_prologue'])
+        kwargs['init'].update(noise_protocol=init_protocol, initiator=True, prologue=vector['init_prologue'])
+        kwargs['resp'].update(noise_protocol=resp_protocol, initiator=False, prologue=vector['resp_prologue'])
 
         initiator = HandshakeState.initialize(**kwargs['init'])
         responder = HandshakeState.initialize(**kwargs['resp'])

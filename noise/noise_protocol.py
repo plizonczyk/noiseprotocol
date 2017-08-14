@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from .constants import MAX_PROTOCOL_NAME_LEN
+from .constants import MAX_PROTOCOL_NAME_LEN, Empty
 from .functions import dh_map, cipher_map, hash_map
 from .patterns import patterns_map
 
@@ -17,25 +17,32 @@ class NoiseProtocol(object):
     }
 
     def __init__(self, protocol_name: bytes):
+        if not isinstance(protocol_name, bytes):
+            raise ValueError('Protocol name has to be of type "bytes", not {}'.format(type(protocol_name)))
         if len(protocol_name) > MAX_PROTOCOL_NAME_LEN:
             raise ValueError('Protocol name too long, has to be at most {} chars long'.format(MAX_PROTOCOL_NAME_LEN))
 
         self.name = protocol_name
         mappings, pattern_modifiers = self._parse_protocol_name()
 
+        # A valid Pattern instance (see Section 7 of specification (rev 32))
         self.pattern = mappings['pattern']()
         self.pattern_modifiers = pattern_modifiers
         if self.pattern_modifiers:
             self.pattern.apply_pattern_modifiers(pattern_modifiers)
 
-        self.dh = mappings['pattern']
-        self.cipher = mappings['pattern']
-        self.hash = mappings['pattern']
+        self.dh_fn: 'DH' = mappings['dh']
+        self.cipher_fn: 'Cipher' = mappings['cipher']
+        self.hash_fn: 'Hash' = mappings['hash']
 
-        self.psks = None  # Placeholder for PSKs
+        self.psks: list = None  # Placeholder for PSKs
+
+        self.handshake_state: 'HandshakeState' = Empty()
+        self.symmetric_state: 'SymmetricState' = Empty()
+        self.cipher_state: 'CipherState' = Empty()
 
     def _parse_protocol_name(self) -> Tuple[dict, list]:
-        unpacked = self.name.split('_')
+        unpacked = self.name.decode().split('_')
         if unpacked[0] != 'Noise':
             raise ValueError('Noise Protocol name shall begin with Noise! Provided: {}'.format(self.name))
 
