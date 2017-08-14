@@ -29,8 +29,8 @@ def _prepare_test_vectors():
             vectors_list = json.load(fd)
 
         for vector in vectors_list:
-            if '_448_' in vector['protocol_name']:
-                continue  # TODO REMOVE WHEN ed448 IS IMPLEMENTED
+            if '_448_' in vector['protocol_name'] or 'ChaCha' in vector['protocol_name']:
+                continue  # TODO REMOVE WHEN ed448/ChaCha SUPPORT IS IMPLEMENTED
             for key, value in vector.copy().items():
                 if key in byte_fields:
                     vector[key] = value.encode()

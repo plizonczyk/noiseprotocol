@@ -2,6 +2,7 @@ from .crypto import ed448
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.asymmetric import x25519
 
 
@@ -14,6 +15,8 @@ class DH(object):
             self.dh = self._25519_dh
         elif method == 'ed448':
             raise NotImplementedError
+        else:
+            raise NotImplementedError('DH method: {}'.format(method))
 
     def _25519_generate_keypair(self) -> 'KeyPair':
         private_key = x25519.X25519PrivateKey.generate()
@@ -25,13 +28,24 @@ class DH(object):
 
 class Cipher(object):
     def __init__(self, method):
-        pass
+        if method == 'AESGCM':
+            self._cipher = AESGCM
+            self.encrypt = self._aesgcm_encrypt
+            self.decrypt = self._aesgcm_decrypt
+        elif method == 'ChaCha20':
+            raise NotImplementedError
+        else:
+            raise NotImplementedError('Cipher method: {}'.format(method))
 
-    def encrypt(self, k, n, ad, plaintext):
-        pass
+    def _aesgcm_encrypt(self, k, n, ad, plaintext):
+        # Might be expensive to initialise AESGCM with the same key every time. The key should be (as per spec) kept in
+        # CipherState, but we may as well hold an initialised AESGCM and manage reinitialisation on CipherState.rekey
+        cipher = self._cipher(k)
+        return cipher.encrypt(nonce=n, data=plaintext, associated_data=ad)
 
-    def decrypt(self, k, n, ad, ciphertext):
-        pass
+    def _aesgcm_decrypt(self, k, n, ad, ciphertext):
+        cipher = self._cipher(k)
+        return cipher.encrypt(nonce=n, data=ciphertext, associated_data=ad)
 
 
 class Hash(object):
@@ -52,6 +66,8 @@ class Hash(object):
             self.hashlen = 64
             self.blocklen = 128
             self.hash = self._hash_blake2b
+        else:
+            raise NotImplementedError('Hash method: {}'.format(method))
 
     def _hash_sha256(self, data):
         digest = hashes.Hash(hashes.SHA256(), default_backend())
@@ -100,7 +116,7 @@ dh_map = {
 
 cipher_map = {
     'AESGCM': Cipher('AESGCM'),
-    'ChaChaPoly': Cipher('ChaCha20')
+    # 'ChaChaPoly': Cipher('ChaCha20')  # TODO ugh cryptography lacks chacha primitive. use nacl I guess.
 }
 
 hash_map = {
