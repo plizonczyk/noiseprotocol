@@ -147,9 +147,11 @@ class HandshakeState(object):
         # Calls MixHash() once for each public key listed in the pre-messages from handshake_pattern, with the specified
         # public key as input (...). If both initiator and responder have pre-messages, the initiator’s public keys are
         # hashed first
-        for keypair in map(instance._get_local_keypair, handshake_pattern.get_initiator_pre_messages()):
+        initiator_keypair_getter = instance._get_local_keypair if initiator else instance._get_remote_keypair
+        responder_keypair_getter = instance._get_remote_keypair if initiator else instance._get_local_keypair
+        for keypair in map(initiator_keypair_getter, handshake_pattern.get_initiator_pre_messages()):
             instance.symmetric_state.mix_hash(keypair.public)
-        for keypair in map(instance._get_remote_keypair, handshake_pattern.get_responder_pre_messages()):
+        for keypair in map(responder_keypair_getter, handshake_pattern.get_responder_pre_messages()):
             instance.symmetric_state.mix_hash(keypair.public)
 
         # Sets message_patterns to the message patterns from handshake_pattern

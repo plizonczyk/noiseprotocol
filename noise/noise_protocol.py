@@ -1,32 +1,8 @@
-from functools import partial
 from typing import Tuple
 
-from .patterns import patterns_map
 from .constants import MAX_PROTOCOL_NAME_LEN
-from .crypto import ed448
-
-from Crypto.Cipher import AES, ChaCha20
-from Crypto.Hash import BLAKE2b, BLAKE2s, SHA256, SHA512
-import ed25519
-
-
-dh_map = {
-    '25519': ed25519.create_keypair,
-    '448': ed448  # TODO implement
-}
-
-cipher_map = {
-    'AESGCM': partial(AES.new, mode=AES.MODE_GCM),
-    'ChaChaPoly': lambda key: ChaCha20.new(key=key)
-}
-
-hash_map = {
-    # TODO benchmark vs hashlib implementation
-    'BLAKE2b': BLAKE2b,  # TODO PARTIALS
-    'BLAKE2s': BLAKE2s,  # TODO PARTIALS
-    'SHA256': SHA256,  # TODO PARTIALS
-    'SHA512': SHA512  # TODO PARTIALS
-}
+from .functions import dh_map, cipher_map, hash_map
+from .patterns import patterns_map
 
 
 class NoiseProtocol(object):
@@ -55,6 +31,8 @@ class NoiseProtocol(object):
         self.dh = mappings['pattern']
         self.cipher = mappings['pattern']
         self.hash = mappings['pattern']
+
+        self.psks = None  # Placeholder for PSKs
 
     def _parse_protocol_name(self) -> Tuple[dict, list]:
         unpacked = self.name.split('_')
@@ -91,9 +69,5 @@ class NoiseProtocol(object):
 
         return mapped_data, modifiers
 
-
-class KeyPair(object):
-    def __init__(self, public='', private=''):
-        # TODO: Maybe switch to properties?
-        self.public = public
-        self.private = private
+    def set_psks(self, psks: list) -> None:
+        self.psks = psks
