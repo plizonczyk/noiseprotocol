@@ -10,13 +10,13 @@ class Pattern(object):
     # As per specification, if both parties have pre-messages, the initiator is listed first. To reduce complexity,
     # pre_messages shall be a list of two lists:
     # the first for the initiator's pre-messages, the second for the responder
-    pre_messages: List[list] = [
+    pre_messages = [
         [],
         []
     ]
 
     # List of lists of valid tokens, alternating between tokens for initiator and responder
-    tokens: List[list] = []
+    tokens = []
 
     def __init__(self):
         self.has_pre_messages = any(map(lambda x: len(x) > 0, self.pre_messages))

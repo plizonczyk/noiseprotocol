@@ -31,15 +31,15 @@ class NoiseProtocol(object):
         if self.pattern_modifiers:
             self.pattern.apply_pattern_modifiers(pattern_modifiers)
 
-        self.dh_fn: 'DH' = mappings['dh']
-        self.cipher_fn: 'Cipher' = mappings['cipher']
-        self.hash_fn: 'Hash' = mappings['hash']
+        self.dh_fn = mappings['dh']
+        self.cipher_fn = mappings['cipher']
+        self.hash_fn = mappings['hash']
 
-        self.psks: list = None  # Placeholder for PSKs
+        self.psks = None  # Placeholder for PSKs
 
-        self.handshake_state: 'HandshakeState' = Empty()
-        self.symmetric_state: 'SymmetricState' = Empty()
-        self.cipher_state: 'CipherState' = Empty()
+        self.handshake_state = Empty()
+        self.symmetric_state = Empty()
+        self.cipher_state = Empty()
 
     def _parse_protocol_name(self) -> Tuple[dict, list]:
         unpacked = self.name.decode().split('_')
