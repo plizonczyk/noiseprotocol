@@ -1,3 +1,5 @@
+import abc
+
 from .crypto import ed448
 
 from cryptography.hazmat.backends import default_backend
@@ -18,9 +20,9 @@ class DH(object):
         else:
             raise NotImplementedError('DH method: {}'.format(method))
 
-    def _25519_generate_keypair(self) -> 'KeyPair':
+    def _25519_generate_keypair(self) -> '_KeyPair':
         private_key = x25519.X25519PrivateKey.generate()
-        return KeyPair(private_key, private_key.public_key())
+        return _KeyPair(private_key, private_key.public_key())
 
     def _25519_dh(self, keypair: 'x25519.X25519PrivateKey', public_key: 'x25519.X25519PublicKey') -> bytes:
         return keypair.exchange(public_key)
@@ -90,19 +92,33 @@ class Hash(object):
         return digest.finalize()
 
 
-class KeyPair(object):
+class _KeyPair(object):
+    __metaclass__ = abc.ABCMeta
+
     def __init__(self, private=None, public=None):
         self.private = private
         self.public = public
 
     @classmethod
-    def _25519_from_private_bytes(cls, private_bytes):
+    @abc.abstractmethod
+    def from_private_bytes(cls, private_bytes):
+        raise NotImplementedError
+
+    @classmethod
+    @abc.abstractmethod
+    def from_public_bytes(cls, public_bytes):
+        raise NotImplementedError
+
+
+class KeyPair25519(_KeyPair):
+    @classmethod
+    def from_private_bytes(cls, private_bytes):
         private = x25519.X25519PrivateKey._from_private_bytes(private_bytes)
         public = private.public_key().public_bytes()
         return cls(private=private, public=public)
 
     @classmethod
-    def _25519_from_public_bytes(cls, public_bytes):
+    def from_public_bytes(cls, public_bytes):
         return cls(public=x25519.X25519PublicKey.from_public_bytes(public_bytes).public_bytes())
 
 
@@ -125,4 +141,9 @@ hash_map = {
     'BLAKE2b': Hash('BLAKE2b'),
     'SHA256': Hash('SHA256'),
     'SHA512': Hash('SHA512')
+}
+
+keypair_map = {
+    '25519': KeyPair25519,
+    # '448': DH('ed448')  # TODO uncomment when ed448 is implemented
 }

@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from .constants import MAX_PROTOCOL_NAME_LEN, Empty
-from .functions import dh_map, cipher_map, hash_map
+from .functions import dh_map, cipher_map, hash_map, keypair_map, KeyPair25519
 from .patterns import patterns_map
 
 
@@ -13,7 +13,8 @@ class NoiseProtocol(object):
         'pattern': patterns_map,
         'dh': dh_map,
         'cipher': cipher_map,
-        'hash': hash_map
+        'hash': hash_map,
+        'keypair': keypair_map
     }
 
     def __init__(self, protocol_name: bytes):
@@ -34,6 +35,7 @@ class NoiseProtocol(object):
         self.dh_fn = mappings['dh']
         self.cipher_fn = mappings['cipher']
         self.hash_fn = mappings['hash']
+        self.keypair_fn = mappings['keypair']
 
         self.psks = None  # Placeholder for PSKs
 
@@ -62,6 +64,7 @@ class NoiseProtocol(object):
                 'dh': unpacked[2],
                 'cipher': unpacked[3],
                 'hash': unpacked[4],
+                'keypair': unpacked[2],
                 'pattern_modifiers': modifiers}
 
         mapped_data = {}

@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from noise.functions import KeyPair
+from noise.functions import KeyPair25519
 from noise.state import HandshakeState
 from noise.noise_protocol import NoiseProtocol
 
@@ -29,8 +29,8 @@ def _prepare_test_vectors():
             vectors_list = json.load(fd)
 
         for vector in vectors_list:
-            if '_448_' in vector['protocol_name'] or 'ChaCha' in vector['protocol_name']:
-                continue  # TODO REMOVE WHEN ed448/ChaCha SUPPORT IS IMPLEMENTED
+            if '_448_' in vector['protocol_name'] or 'ChaCha' in vector['protocol_name'] or 'psk' in vector['protocol_name']:
+                continue  # TODO REMOVE WHEN ed448/ChaCha/psk SUPPORT IS IMPLEMENTED
             for key, value in vector.copy().items():
                 if key in byte_fields:
                     vector[key] = value.encode()
@@ -59,9 +59,9 @@ class TestVectors(object):
                 role_key = role + '_' + key
                 if role_key in vector:
                     if key in ['static', 'ephemeral']:
-                        kwargs[role][kwarg] = KeyPair._25519_from_private_bytes(vector[role_key])  # TODO unify after adding 448
+                        kwargs[role][kwarg] = KeyPair25519.from_private_bytes(vector[role_key])  # TODO unify after adding 448
                     elif key == 'remote_static':
-                        kwargs[role][kwarg] = KeyPair._25519_from_public_bytes(vector[role_key])  # TODO unify after adding 448
+                        kwargs[role][kwarg] = KeyPair25519.from_public_bytes(vector[role_key])  # TODO unify after adding 448
         return kwargs
 
     def test_vector(self, vector):
