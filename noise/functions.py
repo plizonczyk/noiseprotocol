@@ -1,4 +1,5 @@
 import abc
+from functools import partial
 
 from cryptography.hazmat.primitives.hmac import HMAC
 
@@ -6,7 +7,7 @@ from .crypto import ed448
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
 from cryptography.hazmat.primitives.asymmetric import x25519
 
 
@@ -24,7 +25,8 @@ class DH(object):
 
     def _25519_generate_keypair(self) -> '_KeyPair':
         private_key = x25519.X25519PrivateKey.generate()
-        return _KeyPair(private_key, private_key.public_key())
+        public_key = private_key.public_key()
+        return _KeyPair(private_key, public_key, public_key.public_bytes())
 
     def _25519_dh(self, keypair: 'x25519.X25519PrivateKey', public_key: 'x25519.X25519PublicKey') -> bytes:
         return keypair.exchange(public_key)
@@ -37,7 +39,9 @@ class Cipher(object):
             self.encrypt = self._aesgcm_encrypt
             self.decrypt = self._aesgcm_decrypt
         elif method == 'ChaCha20':
-            raise NotImplementedError
+            self._cipher = ChaCha20Poly1305
+            self.encrypt = self._chacha20_encrypt
+            self.decrypt = self._chacha20_decrypt
         else:
             raise NotImplementedError('Cipher method: {}'.format(method))
 
@@ -45,11 +49,26 @@ class Cipher(object):
         # Might be expensive to initialise AESGCM with the same key every time. The key should be (as per spec) kept in
         # CipherState, but we may as well hold an initialised AESGCM and manage reinitialisation on CipherState.rekey
         cipher = self._cipher(k)
-        return cipher.encrypt(nonce=n, data=plaintext, associated_data=ad)
+        return cipher.encrypt(nonce=self._aesgcm_nonce(n), data=plaintext, associated_data=ad)
 
     def _aesgcm_decrypt(self, k, n, ad, ciphertext):
         cipher = self._cipher(k)
-        return cipher.encrypt(nonce=n, data=ciphertext, associated_data=ad)
+        return cipher.decrypt(nonce=self._aesgcm_nonce(n), data=ciphertext, associated_data=ad)
+
+    def _aesgcm_nonce(self, n):
+        return b'\x00\x00\x00\x00' + n.to_bytes(length=8, byteorder='big')
+
+    def _chacha20_encrypt(self, k, n, ad, plaintext):
+        # Same comment as with AESGCM
+        cipher = self._cipher(k)
+        return cipher.encrypt(nonce=self._chacha20_nonce(n), data=plaintext, associated_data=ad)
+
+    def _chacha20_decrypt(self, k, n, ad, ciphertext):
+        cipher = self._cipher(k)
+        return cipher.decrypt(nonce=self._chacha20_nonce(n), data=ciphertext, associated_data=ad)
+
+    def _chacha20_nonce(self, n):
+        return b'\x00\x00\x00\x00' + n.to_bytes(length=8, byteorder='little')
 
 
 class Hash(object):
@@ -68,12 +87,12 @@ class Hash(object):
             self.hashlen = 32
             self.blocklen = 64
             self.hash = self._hash_blake2s
-            self.fn = hashes.BLAKE2s
+            self.fn = partial(hashes.BLAKE2s, digest_size=self.hashlen)
         elif method == 'BLAKE2b':
             self.hashlen = 64
             self.blocklen = 128
             self.hash = self._hash_blake2b
-            self.fn = hashes.BLAKE2b
+            self.fn = partial(hashes.BLAKE2b, digest_size=self.hashlen)
         else:
             raise NotImplementedError('Hash method: {}'.format(method))
 
@@ -101,9 +120,10 @@ class Hash(object):
 class _KeyPair(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, private=None, public=None):
+    def __init__(self, private=None, public=None, public_bytes=None):
         self.private = private
         self.public = public
+        self.public_bytes = public_bytes
 
     @classmethod
     @abc.abstractmethod
@@ -120,12 +140,13 @@ class KeyPair25519(_KeyPair):
     @classmethod
     def from_private_bytes(cls, private_bytes):
         private = x25519.X25519PrivateKey._from_private_bytes(private_bytes)
-        public = private.public_key().public_bytes()
-        return cls(private=private, public=public)
+        public = private.public_key()
+        return cls(private=private, public=public, public_bytes=public.public_bytes())
 
     @classmethod
     def from_public_bytes(cls, public_bytes):
-        return cls(public=x25519.X25519PublicKey.from_public_bytes(public_bytes).public_bytes())
+        public = x25519.X25519PublicKey.from_public_bytes(public_bytes)
+        return cls(public=public, public_bytes=public.public_bytes())
 
 
 # Available crypto functions
@@ -138,7 +159,7 @@ dh_map = {
 
 cipher_map = {
     'AESGCM': Cipher('AESGCM'),
-    # 'ChaChaPoly': Cipher('ChaCha20')  # TODO ugh cryptography lacks chacha primitive. use nacl I guess.
+    'ChaChaPoly': Cipher('ChaCha20')
 }
 
 hash_map = {
@@ -157,9 +178,9 @@ keypair_map = {
 
 def hmac_hash(key, data, algorithm):
     # Applies HMAC using the HASH() function.
-    hmac = HMAC(key=key, algorithm=algorithm, backend=default_backend())
+    hmac = HMAC(key=key, algorithm=algorithm(), backend=default_backend())
     hmac.update(data=data)
-    return hmac
+    return hmac.finalize()
 
 
 def hkdf(chaining_key, input_key_material, num_outputs, hmac_hash_fn):

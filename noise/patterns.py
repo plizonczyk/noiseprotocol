@@ -20,12 +20,13 @@ class Pattern(object):
 
     def __init__(self):
         self.has_pre_messages = any(map(lambda x: len(x) > 0, self.pre_messages))
+        self.one_way = False
 
     def get_initiator_pre_messages(self) -> list:
-        return self.pre_messages[0]
+        return self.pre_messages[0].copy()
 
     def get_responder_pre_messages(self) -> list:
-        return self.pre_messages[1]
+        return self.pre_messages[1].copy()
 
     def apply_pattern_modifiers(self, modifiers: List[str]) -> None:
         # Applies given pattern modifiers to self.tokens of the Pattern instance.
@@ -54,7 +55,13 @@ class Pattern(object):
 
 # One-way patterns
 
-class PatternN(Pattern):
+class OneWayPattern(Pattern):
+    def __init__(self):
+        super(Pattern, self).__init__()
+        self.one_way = True
+
+
+class PatternN(OneWayPattern):
     pre_messages = [
         [],
         [TOKEN_S]
@@ -64,7 +71,7 @@ class PatternN(Pattern):
     ]
 
 
-class PatternK(Pattern):
+class PatternK(OneWayPattern):
     pre_messages = [
         [TOKEN_S],
         [TOKEN_S]
@@ -74,7 +81,7 @@ class PatternK(Pattern):
     ]
 
 
-class PatternX(Pattern):
+class PatternX(OneWayPattern):
     pre_messages = [
         [],
         [TOKEN_S]
@@ -199,8 +206,8 @@ class PatternIX(Pattern):
 
 patterns_map = {
     'PatternN': PatternN,
-    'PatternK': PatternN,
-    'PatternX': PatternN,
+    'PatternK': PatternK,
+    'PatternX': PatternX,
     'PatternNN': PatternNN,
     'PatternKN': PatternKN,
     'PatternNK': PatternNK,

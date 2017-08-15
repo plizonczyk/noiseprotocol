@@ -7,26 +7,17 @@ class CipherState(object):
 
     The initialize_key() function takes additional required argument - noise_protocol.
     """
-    def __init__(self):
+    def __init__(self, noise_protocol):
         self.k = Empty()
         self.n = None
-        self.noise_protocol = None
+        self.noise_protocol = noise_protocol
 
-    @classmethod
-    def initialize_key(cls, key, noise_protocol: 'NoiseProtocol') -> 'CipherState':  # TODO: fix for split case
+    def initialize_key(self, key):
         """
-
-        :param key:
-        :param noise_protocol: a valid NoiseProtocol instance
-        :return: initialised CipherState instance
+        :param key: Key to set within CipherState
         """
-        instance = cls()
-        instance.noise_protocol = noise_protocol
-        noise_protocol.cipher_state = instance
-
-        instance.k = key
-        instance.n = 0
-        return instance
+        self.k = key
+        self.n = 0
 
     def has_key(self):
         """
@@ -47,7 +38,7 @@ class CipherState(object):
         if not self.has_key():
             return plaintext
 
-        ciphertext = self.noise_protocol.cipher.encrypt(self.k, self.n, ad, plaintext)
+        ciphertext = self.noise_protocol.cipher_fn.encrypt(self.k, self.n, ad, plaintext)
         self.n = self.n + 1
         return ciphertext
 
@@ -65,9 +56,10 @@ class CipherState(object):
         if not self.has_key():
             return ciphertext
 
-        plaintext = self.noise_protocol.cipher.decrypt(self.k, self.n, ad, ciphertext)
+        plaintext = self.noise_protocol.cipher_fn.decrypt(self.k, self.n, ad, ciphertext)
         self.n = self.n + 1
         return plaintext
+
 
 
 class SymmetricState(object):
@@ -107,7 +99,9 @@ class SymmetricState(object):
         instance.ck = instance.h
 
         # Calls InitializeKey(empty).
-        CipherState.initialize_key(Empty(), noise_protocol)
+        cipher_state = CipherState(noise_protocol)
+        cipher_state.initialize_key(Empty())
+        noise_protocol.cipher_state_handshake = cipher_state
 
         return instance
 
@@ -123,14 +117,14 @@ class SymmetricState(object):
             temp_k = temp_k[:32]
 
         # Calls InitializeKey(temp_k).
-        self.noise_protocol.cipher_state.initialize_key(temp_k)  # TODO check for memory leaks here
+        self.noise_protocol.cipher_state_handshake.initialize_key(temp_k)
 
     def mix_hash(self, data: bytes):
         """
         Sets h = HASH(h + data).
         :param data: bytes sequence
         """
-        self.h = self.noise_protocol.hash_fn.hash(data + self.h)
+        self.h = self.noise_protocol.hash_fn.hash(self.h + data)
 
     def encrypt_and_hash(self, plaintext: bytes) -> bytes:
         """
@@ -139,7 +133,7 @@ class SymmetricState(object):
         :param plaintext: bytes sequence
         :return: ciphertext bytes sequence
         """
-        ciphertext = self.noise_protocol.cipher_state.encrypt_with_ad(self.h, plaintext)
+        ciphertext = self.noise_protocol.cipher_state_handshake.encrypt_with_ad(self.h, plaintext)
         self.mix_hash(ciphertext)
         return ciphertext
 
@@ -150,7 +144,7 @@ class SymmetricState(object):
         :param ciphertext: bytes sequence
         :return: plaintext bytes sequence
         """
-        plaintext = self.noise_protocol.cipher_state.decrypt_with_ad(self.h, ciphertext)
+        plaintext = self.noise_protocol.cipher_state_handshake.decrypt_with_ad(self.h, ciphertext)
         self.mix_hash(ciphertext)
         return plaintext
 
@@ -169,8 +163,17 @@ class SymmetricState(object):
 
         # Creates two new CipherState objects c1 and c2.
         # Calls c1.InitializeKey(temp_k1) and c2.InitializeKey(temp_k2).
-        c1 = CipherState.initialize_key(temp_k1, self.noise_protocol)  # TODO WRONG!
-        c2 = CipherState.initialize_key(temp_k2, self.noise_protocol)  # TODO WRONG!
+        c1, c2 = CipherState(self.noise_protocol), CipherState(self.noise_protocol)
+        c1.initialize_key(temp_k1)
+        c2.initialize_key(temp_k2)
+        if self.noise_protocol.handshake_state.initiator:
+            self.noise_protocol.cipher_state_encrypt = c1
+            self.noise_protocol.cipher_state_decrypt = c2
+        else:
+            self.noise_protocol.cipher_state_encrypt = c2
+            self.noise_protocol.cipher_state_decrypt = c1
+
+        self.noise_protocol.handshake_done()
 
         # Returns the pair (c1, c2).
         return c1, c2
@@ -194,7 +197,7 @@ class HandshakeState(object):
 
     @classmethod
     def initialize(cls, noise_protocol: 'NoiseProtocol', initiator: bool, prologue: bytes=b'', s: bytes=None,
-                   e: bytes=None, rs: bytes=None, re: bytes=None) -> 'HandshakeState':
+                   e: bytes=None, rs: bytes=None, re: bytes=None) -> 'HandshakeState':  # TODO update typing (keypair)
         """
         Constructor method.
         Comments below are mostly copied from specification.
@@ -240,12 +243,12 @@ class HandshakeState(object):
         initiator_keypair_getter = instance._get_local_keypair if initiator else instance._get_remote_keypair
         responder_keypair_getter = instance._get_remote_keypair if initiator else instance._get_local_keypair
         for keypair in map(initiator_keypair_getter, noise_protocol.pattern.get_initiator_pre_messages()):
-            instance.symmetric_state.mix_hash(keypair.public)
+            instance.symmetric_state.mix_hash(keypair.public_bytes)
         for keypair in map(responder_keypair_getter, noise_protocol.pattern.get_responder_pre_messages()):
-            instance.symmetric_state.mix_hash(keypair.public)
+            instance.symmetric_state.mix_hash(keypair.public_bytes)
 
         # Sets message_patterns to the message patterns from handshake_pattern
-        instance.message_patterns = noise_protocol.pattern.tokens
+        instance.message_patterns = noise_protocol.pattern.tokens.copy()
 
         return instance
 
@@ -262,35 +265,36 @@ class HandshakeState(object):
         for token in message_pattern:
             if token == TOKEN_E:
                 # Sets e = GENERATE_KEYPAIR(). Appends e.public_key to the buffer. Calls MixHash(e.public_key)
-                self.e = self.noise_protocol.dh_fn.generate_keypair()
-                message_buffer.write(self.e.public)
-                self.symmetric_state.mix_hash(self.e.public)
+                self.e = self.noise_protocol.dh_fn.generate_keypair() if isinstance(self.e, Empty) else self.e  # TODO: it's workaround, otherwise use mock
+                message_buffer.write(self.e.public_bytes)
+                self.symmetric_state.mix_hash(self.e.public_bytes)
 
             elif token == TOKEN_S:
                 # Appends EncryptAndHash(s.public_key) to the buffer
-                message_buffer.write(self.symmetric_state.encrypt_and_hash(self.s.public))
+                message_buffer.write(self.symmetric_state.encrypt_and_hash(self.s.public_bytes))
 
             elif token == TOKEN_EE:
                 # Calls MixKey(DH(e, re))
-                self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e, self.re.public))
+                self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e.private, self.re.public))
 
             elif token == TOKEN_ES:
                 # Calls MixKey(DH(e, rs)) if initiator, MixKey(DH(s, re)) if responder
                 if self.initiator:
-                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e, self.rs.public))
+                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e.private, self.rs.public))
                 else:
-                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s, self.re.public))
+                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s.private, self.re.public))
 
             elif token == TOKEN_SE:
                 # Calls MixKey(DH(s, re)) if initiator, MixKey(DH(e, rs)) if responder
                 if self.initiator:
-                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s, self.re.public))
+                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s.private, self.re.public))
                 else:
-                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e, self.rs.public))
+                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e.private, self.rs.public))
 
             elif token == TOKEN_SS:
                 # Calls MixKey(DH(s, rs))
-                self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s, self.rs.public))
+                self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s.private, self.rs.public))
+                pass
 
             elif token == TOKEN_PSK:
                 raise NotImplementedError
@@ -320,38 +324,38 @@ class HandshakeState(object):
             if token == TOKEN_E:
                 # Sets re to the next DHLEN bytes from the message. Calls MixHash(re.public_key).
                 self.re = self.noise_protocol.keypair_fn.from_public_bytes(message.read(dhlen))
-                self.symmetric_state.mix_hash(self.re.public)
+                self.symmetric_state.mix_hash(self.re.public_bytes)
 
             elif token == TOKEN_S:
                 # Sets temp to the next DHLEN + 16 bytes of the message if HasKey() == True, or to the next DHLEN bytes
                 # otherwise. Sets rs to DecryptAndHash(temp).
-                if self.noise_protocol.cipher_state.has_key():
+                if self.noise_protocol.cipher_state_handshake.has_key():
                     temp = message.read(dhlen + 16)
                 else:
                     temp = message.read(dhlen)
-                self.rs = self.symmetric_state.decrypt_and_hash(temp)
+                self.rs = self.noise_protocol.keypair_fn.from_public_bytes(self.symmetric_state.decrypt_and_hash(temp))
 
             elif token == TOKEN_EE:
                 # Calls MixKey(DH(e, re)).
-                self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e, self.re.public))
+                self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e.private, self.re.public))
 
             elif token == TOKEN_ES:
                 # Calls MixKey(DH(e, rs)) if initiator, MixKey(DH(s, re)) if responder
                 if self.initiator:
-                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e, self.rs.public))
+                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e.private, self.rs.public))
                 else:
-                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s, self.re.public))
+                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s.private, self.re.public))
 
             elif token == TOKEN_SE:
                 # Calls MixKey(DH(s, re)) if initiator, MixKey(DH(e, rs)) if responder
                 if self.initiator:
-                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s, self.re.public))
+                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s.private, self.re.public))
                 else:
-                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e, self.rs.public))
+                    self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.e.private, self.rs.public))
 
             elif token == TOKEN_SS:
                 # Calls MixKey(DH(s, rs))
-                self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s, self.rs.public))
+                self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s.private, self.rs.public))
 
             elif token == TOKEN_PSK:
                 raise NotImplementedError
@@ -360,7 +364,7 @@ class HandshakeState(object):
                 raise NotImplementedError('Pattern token: {}'.format(token))
 
         # Calls DecryptAndHash() on the remaining bytes of the message and stores the output into payload_buffer.
-        payload_buffer.write(self.symmetric_state.decrypt_and_hash(message))  # TODO remaining bytes!
+        payload_buffer.write(self.symmetric_state.decrypt_and_hash(message.read()))
 
         # If there are no more message patterns returns two new CipherState objects by calling Split()
         if len(self.message_patterns) == 0:

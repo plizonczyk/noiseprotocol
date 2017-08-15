@@ -40,11 +40,16 @@ class NoiseProtocol(object):
         self.hmac = partial(hmac_hash, algorithm=self.hash_fn.fn)
         self.hkdf = partial(hkdf, hmac_hash_fn=self.hmac)
 
+        self.initiator = None
+        self.one_way = False
+        self.handshake_hash = None
         self.psks = None  # Placeholder for PSKs
 
         self.handshake_state = Empty()
         self.symmetric_state = Empty()
-        self.cipher_state = Empty()
+        self.cipher_state_handshake = Empty()
+        self.cipher_state_encrypt = Empty()
+        self.cipher_state_decrypt = Empty()
 
     def _parse_protocol_name(self) -> Tuple[dict, list]:
         unpacked = self.name.decode().split('_')
@@ -84,3 +89,12 @@ class NoiseProtocol(object):
 
     def set_psks(self, psks: list) -> None:
         self.psks = psks
+
+    def handshake_done(self):
+        self.initiator = self.handshake_state.initiator
+        if self.pattern.one_way:
+            if self.initiator:
+                del self.cipher_state_decrypt
+            else:
+                del self.cipher_state_encrypt
+        self.handshake_hash = self.symmetric_state.h
