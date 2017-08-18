@@ -7,20 +7,21 @@ class Pattern(object):
     """
     TODO document
     """
-    # As per specification, if both parties have pre-messages, the initiator is listed first. To reduce complexity,
-    # pre_messages shall be a list of two lists:
-    # the first for the initiator's pre-messages, the second for the responder
-    pre_messages = [
-        [],
-        []
-    ]
-
-    # List of lists of valid tokens, alternating between tokens for initiator and responder
-    tokens = []
-
     def __init__(self):
+        # As per specification, if both parties have pre-messages, the initiator is listed first. To reduce complexity,
+        # pre_messages shall be a list of two lists:
+        # the first for the initiator's pre-messages, the second for the responder
+        self.pre_messages = [
+            [],
+            []
+        ]
+
+        # List of lists of valid tokens, alternating between tokens for initiator and responder
+        self.tokens = []
+
         self.has_pre_messages = any(map(lambda x: len(x) > 0, self.pre_messages))
         self.one_way = False
+        self.psk_count = 0
 
     def get_initiator_pre_messages(self) -> list:
         return self.pre_messages[0].copy()
@@ -41,10 +42,11 @@ class Pattern(object):
                     raise ValueError('Modifier {} cannot be applied - pattern has not enough messages'.format(modifier))
 
                 # Add TOKEN_PSK in the correct place in the correct message
-                if index % 2 == 0:
-                    self.tokens[index//2].insert(0, TOKEN_PSK)
-                else:
-                    self.tokens[index//2].append(TOKEN_PSK)
+                if index == 0:  # if 0, insert at the beginning of first message
+                    self.tokens[0].insert(0, TOKEN_PSK)
+                else:  # if bigger than zero, append at the end of first, second etc.
+                    self.tokens[index - 1].append(TOKEN_PSK)
+                self.psk_count += 1
 
             elif modifier == 'fallback':
                 raise NotImplementedError  # TODO implement
@@ -57,151 +59,196 @@ class Pattern(object):
 
 class OneWayPattern(Pattern):
     def __init__(self):
-        super(Pattern, self).__init__()
+        super(OneWayPattern, self).__init__()
         self.one_way = True
 
 
 class PatternN(OneWayPattern):
-    pre_messages = [
-        [],
-        [TOKEN_S]
-    ]
-    tokens = [
-        [TOKEN_E, TOKEN_ES]
-    ]
+    def __init__(self):
+        super(PatternN, self).__init__()
+
+        self.pre_messages = [
+            [],
+            [TOKEN_S]
+        ]
+        self.tokens = [
+            [TOKEN_E, TOKEN_ES]
+        ]
 
 
 class PatternK(OneWayPattern):
-    pre_messages = [
-        [TOKEN_S],
-        [TOKEN_S]
-    ]
-    tokens = [
-        [TOKEN_E, TOKEN_ES, TOKEN_SS]
-    ]
+    def __init__(self):
+        super(PatternK, self).__init__()
+
+        self.pre_messages = [
+            [TOKEN_S],
+            [TOKEN_S]
+        ]
+        self.tokens = [
+            [TOKEN_E, TOKEN_ES, TOKEN_SS]
+        ]
 
 
 class PatternX(OneWayPattern):
-    pre_messages = [
-        [],
-        [TOKEN_S]
-    ]
-    tokens = [
-        [TOKEN_E, TOKEN_ES, TOKEN_S, TOKEN_SS]
-    ]
+    def __init__(self):
+        super(PatternX, self).__init__()
+
+        self.pre_messages = [
+            [],
+            [TOKEN_S]
+        ]
+        self.tokens = [
+            [TOKEN_E, TOKEN_ES, TOKEN_S, TOKEN_SS]
+        ]
 
 
 # Interactive patterns
 
 class PatternNN(Pattern):
-    tokens = [
-        [TOKEN_E],
-        [TOKEN_E, TOKEN_EE]
-    ]
+    def __init__(self):
+        super(PatternNN, self).__init__()
+
+        self.tokens = [
+            [TOKEN_E],
+            [TOKEN_E, TOKEN_EE]
+        ]
 
 
 class PatternKN(Pattern):
-    pre_messages = [
-        [TOKEN_S],
-        []
-    ]
-    tokens = [
-        [TOKEN_E],
-        [TOKEN_E, TOKEN_EE, TOKEN_SE]
-    ]
+    def __init__(self):
+        super(PatternKN, self).__init__()
+
+        self.pre_messages = [
+            [TOKEN_S],
+            []
+        ]
+        self.tokens = [
+            [TOKEN_E],
+            [TOKEN_E, TOKEN_EE, TOKEN_SE]
+        ]
 
 
 class PatternNK(Pattern):
-    pre_messages = [
-        [],
-        [TOKEN_S]
-    ]
-    tokens = [
-        [TOKEN_E, TOKEN_ES],
-        [TOKEN_E, TOKEN_EE]
-    ]
+    def __init__(self):
+        super(PatternNK, self).__init__()
+
+        self.pre_messages = [
+            [],
+            [TOKEN_S]
+        ]
+        self.tokens = [
+            [TOKEN_E, TOKEN_ES],
+            [TOKEN_E, TOKEN_EE]
+        ]
 
 
 class PatternKK(Pattern):
-    pre_messages = [
-        [TOKEN_S],
-        [TOKEN_S]
-    ]
-    tokens = [
-        [TOKEN_E, TOKEN_ES, TOKEN_SS],
-        [TOKEN_E, TOKEN_EE, TOKEN_SE]
-    ]
+    def __init__(self):
+        super(PatternKK, self).__init__()
+
+        self.pre_messages = [
+            [TOKEN_S],
+            [TOKEN_S]
+        ]
+        self.tokens = [
+            [TOKEN_E, TOKEN_ES, TOKEN_SS],
+            [TOKEN_E, TOKEN_EE, TOKEN_SE]
+        ]
 
 
 class PatternNX(Pattern):
-    tokens = [
-        [TOKEN_E],
-        [TOKEN_E, TOKEN_EE, TOKEN_S, TOKEN_ES]
-    ]
+    def __init__(self):
+        super(PatternNX, self).__init__()
+
+        self.tokens = [
+            [TOKEN_E],
+            [TOKEN_E, TOKEN_EE, TOKEN_S, TOKEN_ES]
+        ]
 
 
 class PatternKX(Pattern):
-    pre_messages = [
-        [TOKEN_S],
-        []
-    ]
-    tokens = [
-        [TOKEN_E],
-        [TOKEN_E, TOKEN_EE, TOKEN_SE, TOKEN_S, TOKEN_ES]
-    ]
+    def __init__(self):
+        super(PatternKX, self).__init__()
+
+        self.pre_messages = [
+            [TOKEN_S],
+            []
+        ]
+        self.tokens = [
+            [TOKEN_E],
+            [TOKEN_E, TOKEN_EE, TOKEN_SE, TOKEN_S, TOKEN_ES]
+        ]
 
 
 class PatternXN(Pattern):
-    tokens = [
-        [TOKEN_E],
-        [TOKEN_E, TOKEN_EE],
-        [TOKEN_S, TOKEN_SE]
-    ]
+    def __init__(self):
+        super(PatternXN, self).__init__()
+
+        self.tokens = [
+            [TOKEN_E],
+            [TOKEN_E, TOKEN_EE],
+            [TOKEN_S, TOKEN_SE]
+        ]
 
 
 class PatternIN(Pattern):
-    tokens = [
-        [TOKEN_E, TOKEN_S],
-        [TOKEN_E, TOKEN_EE, TOKEN_SE]
-    ]
+    def __init__(self):
+        super(PatternIN, self).__init__()
+
+        self.tokens = [
+            [TOKEN_E, TOKEN_S],
+            [TOKEN_E, TOKEN_EE, TOKEN_SE]
+        ]
 
 
 class PatternXK(Pattern):
-    pre_messages = [
-        [],
-        [TOKEN_S]
-    ]
-    tokens = [
-        [TOKEN_E, TOKEN_ES],
-        [TOKEN_E, TOKEN_EE],
-        [TOKEN_S, TOKEN_SE]
-    ]
+    def __init__(self):
+        super(PatternXK, self).__init__()
+
+        self.pre_messages = [
+            [],
+            [TOKEN_S]
+        ]
+        self.tokens = [
+            [TOKEN_E, TOKEN_ES],
+            [TOKEN_E, TOKEN_EE],
+            [TOKEN_S, TOKEN_SE]
+        ]
 
 
 class PatternIK(Pattern):
-    pre_messages = [
-        [],
-        [TOKEN_S]
-    ]
-    tokens = [
-        [TOKEN_E, TOKEN_ES, TOKEN_S, TOKEN_SS],
-        [TOKEN_E, TOKEN_EE, TOKEN_SE]
-    ]
+    def __init__(self):
+        super(PatternIK, self).__init__()
+
+        self.pre_messages = [
+            [],
+            [TOKEN_S]
+        ]
+        self.tokens = [
+            [TOKEN_E, TOKEN_ES, TOKEN_S, TOKEN_SS],
+            [TOKEN_E, TOKEN_EE, TOKEN_SE]
+        ]
 
 
 class PatternXX(Pattern):
-    tokens = [
-        [TOKEN_E],
-        [TOKEN_E, TOKEN_EE, TOKEN_S, TOKEN_ES],
-        [TOKEN_S, TOKEN_SE]
-    ]
+    def __init__(self):
+        super(PatternXX, self).__init__()
+
+        self.tokens = [
+            [TOKEN_E],
+            [TOKEN_E, TOKEN_EE, TOKEN_S, TOKEN_ES],
+            [TOKEN_S, TOKEN_SE]
+        ]
 
 
 class PatternIX(Pattern):
-    tokens = [
-        [TOKEN_E, TOKEN_S],
-        [TOKEN_E, TOKEN_EE, TOKEN_SE, TOKEN_S, TOKEN_ES]
-    ]
+    def __init__(self):
+        super(PatternIX, self).__init__()
+
+        self.tokens = [
+            [TOKEN_E, TOKEN_S],
+            [TOKEN_E, TOKEN_EE, TOKEN_SE, TOKEN_S, TOKEN_ES]
+        ]
 
 
 patterns_map = {

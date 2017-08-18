@@ -126,6 +126,17 @@ class SymmetricState(object):
         """
         self.h = self.noise_protocol.hash_fn.hash(self.h + data)
 
+    def mix_key_and_hash(self, input_key_material: bytes):
+        # Sets ck, temp_h, temp_k = HKDF(ck, input_key_material, 3).
+        self.ck, temp_h, temp_k = self.noise_protocol.hkdf(self.ck, input_key_material, 3)
+        # Calls MixHash(temp_h).
+        self.mix_hash(temp_h)
+        # If HASHLEN is 64, then truncates temp_k to 32 bytes.
+        if self.noise_protocol.hash_fn.hashlen == 64:
+            temp_k = temp_k[:32]
+        # Calls InitializeKey(temp_k).
+        self.noise_protocol.cipher_state_handshake.initialize_key(temp_k)
+
     def encrypt_and_hash(self, plaintext: bytes) -> bytes:
         """
         Sets ciphertext = EncryptWithAd(h, plaintext), calls MixHash(ciphertext), and returns ciphertext. Note that if
@@ -268,6 +279,8 @@ class HandshakeState(object):
                 self.e = self.noise_protocol.dh_fn.generate_keypair() if isinstance(self.e, Empty) else self.e  # TODO: it's workaround, otherwise use mock
                 message_buffer.write(self.e.public_bytes)
                 self.symmetric_state.mix_hash(self.e.public_bytes)
+                if self.noise_protocol.is_psk_handshake:
+                    self.symmetric_state.mix_key(self.e.public_bytes)
 
             elif token == TOKEN_S:
                 # Appends EncryptAndHash(s.public_key) to the buffer
@@ -294,10 +307,9 @@ class HandshakeState(object):
             elif token == TOKEN_SS:
                 # Calls MixKey(DH(s, rs))
                 self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s.private, self.rs.public))
-                pass
 
             elif token == TOKEN_PSK:
-                raise NotImplementedError
+                self.symmetric_state.mix_key_and_hash(self.noise_protocol.psks.pop(0))
 
             else:
                 raise NotImplementedError('Pattern token: {}'.format(token))
@@ -325,6 +337,8 @@ class HandshakeState(object):
                 # Sets re to the next DHLEN bytes from the message. Calls MixHash(re.public_key).
                 self.re = self.noise_protocol.keypair_fn.from_public_bytes(message.read(dhlen))
                 self.symmetric_state.mix_hash(self.re.public_bytes)
+                if self.noise_protocol.is_psk_handshake:
+                    self.symmetric_state.mix_key(self.re.public_bytes)
 
             elif token == TOKEN_S:
                 # Sets temp to the next DHLEN + 16 bytes of the message if HasKey() == True, or to the next DHLEN bytes
@@ -358,7 +372,7 @@ class HandshakeState(object):
                 self.symmetric_state.mix_key(self.noise_protocol.dh_fn.dh(self.s.private, self.rs.public))
 
             elif token == TOKEN_PSK:
-                raise NotImplementedError
+                self.symmetric_state.mix_key_and_hash(self.noise_protocol.psks.pop(0))
 
             else:
                 raise NotImplementedError('Pattern token: {}'.format(token))

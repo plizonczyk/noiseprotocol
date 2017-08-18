@@ -35,15 +35,15 @@ def _prepare_test_vectors():
         for vector in vectors_list:
             if 'name' in vector and not 'protocol_name' in vector:  # noise-c-* workaround
                 vector['protocol_name'] = vector['name']
-            if '_448_' in vector['protocol_name'] or 'psk' in vector['protocol_name'] or 'PSK' in vector['protocol_name']:
-                continue  # TODO REMOVE WHEN ed448/psk/blake SUPPORT IS IMPLEMENTED/FIXED
+            if '_448_' in vector['protocol_name'] or 'PSK' in vector['protocol_name']:  # no old NoisePSK tests
+                continue  # TODO REMOVE WHEN ed448 SUPPORT IS IMPLEMENTED/FIXED
             for key, value in vector.copy().items():
                 if key in byte_fields:
                     vector[key] = value.encode()
                 if key in hexbyte_fields:
                     vector[key] = bytes.fromhex(value)
                 if key in list_fields:
-                    vector[key] = [k.encode() for k in value]
+                    vector[key] = [bytes.fromhex(k) for k in value]
                 if key == dict_field:
                     vector[key] = []
                     for dictionary in value:
@@ -77,11 +77,12 @@ class TestVectors(object):
     def test_vector(self, vector):
         kwargs = self._prepare_handshake_state_kwargs(vector)
 
-        init_protocol = NoiseProtocol(vector['protocol_name'])
-        resp_protocol = NoiseProtocol(vector['protocol_name'])
         if 'init_psks' in vector and 'resp_psks' in vector:
-            init_protocol.set_psks(vector['init_psks'])
-            resp_protocol.set_psks(vector['resp_psks'])
+            init_protocol = NoiseProtocol(vector['protocol_name'], psks=vector['init_psks'])
+            resp_protocol = NoiseProtocol(vector['protocol_name'], psks=vector['resp_psks'])
+        else:
+            init_protocol = NoiseProtocol(vector['protocol_name'])
+            resp_protocol = NoiseProtocol(vector['protocol_name'])
 
         kwargs['init'].update(noise_protocol=init_protocol, initiator=True, prologue=vector['init_prologue'])
         kwargs['resp'].update(noise_protocol=resp_protocol, initiator=False, prologue=vector['resp_prologue'])

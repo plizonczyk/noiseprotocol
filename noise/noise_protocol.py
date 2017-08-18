@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Tuple
+from typing import Tuple, List
 
 from .constants import MAX_PROTOCOL_NAME_LEN, Empty
 from .functions import dh_map, cipher_map, hash_map, keypair_map, hmac_hash, hkdf
@@ -18,7 +18,7 @@ class NoiseProtocol(object):
         'keypair': keypair_map
     }
 
-    def __init__(self, protocol_name: bytes):
+    def __init__(self, protocol_name: bytes, psks: List[bytes]=None):
         if not isinstance(protocol_name, bytes):
             raise ValueError('Protocol name has to be of type "bytes", not {}'.format(type(protocol_name)))
         if len(protocol_name) > MAX_PROTOCOL_NAME_LEN:
@@ -33,6 +33,16 @@ class NoiseProtocol(object):
         if self.pattern_modifiers:
             self.pattern.apply_pattern_modifiers(pattern_modifiers)
 
+        # Handle PSK handshake options
+        self.psks = psks
+        self.is_psk_handshake = False if not self.psks else True
+        if self.is_psk_handshake:
+            if any([len(psk) != 32 for psk in self.psks]):
+                raise ValueError('Invalid psk length!')
+            if len(self.psks) != self.pattern.psk_count:
+                raise ValueError('Bad number of PSKs provided to this protocol! {} are required, given {}'.format(
+                    self.pattern.psk_count, len(self.psks)))
+
         self.dh_fn = mappings['dh']
         self.cipher_fn = mappings['cipher']
         self.hash_fn = mappings['hash']
@@ -43,7 +53,6 @@ class NoiseProtocol(object):
         self.initiator = None
         self.one_way = False
         self.handshake_hash = None
-        self.psks = None  # Placeholder for PSKs
 
         self.handshake_state = Empty()
         self.symmetric_state = Empty()
@@ -86,9 +95,6 @@ class NoiseProtocol(object):
             mapped_data[key] = func
 
         return mapped_data, modifiers
-
-    def set_psks(self, psks: list) -> None:
-        self.psks = psks
 
     def handshake_done(self):
         self.initiator = self.handshake_state.initiator
