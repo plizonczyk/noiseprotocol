@@ -35,7 +35,7 @@ def _prepare_test_vectors():
         for vector in vectors_list:
             if 'name' in vector and not 'protocol_name' in vector:  # noise-c-* workaround
                 vector['protocol_name'] = vector['name']
-            if '_448_' in vector['protocol_name'] or 'psk' in vector['protocol_name'] or 'BLAKE' in vector['protocol_name'] or 'PSK' in vector['protocol_name']:
+            if '_448_' in vector['protocol_name'] or 'psk' in vector['protocol_name'] or 'PSK' in vector['protocol_name']:
                 continue  # TODO REMOVE WHEN ed448/psk/blake SUPPORT IS IMPLEMENTED/FIXED
             for key, value in vector.copy().items():
                 if key in byte_fields:
