@@ -5,7 +5,6 @@ import os
 
 import pytest
 
-from noise.functions import KeyPair25519
 from noise.state import HandshakeState, CipherState
 from noise.noise_protocol import NoiseProtocol
 
@@ -35,8 +34,8 @@ def _prepare_test_vectors():
         for vector in vectors_list:
             if 'name' in vector and not 'protocol_name' in vector:  # noise-c-* workaround
                 vector['protocol_name'] = vector['name']
-            if '_448_' in vector['protocol_name'] or 'PSK' in vector['protocol_name']:  # no old NoisePSK tests
-                continue  # TODO REMOVE WHEN ed448 SUPPORT IS IMPLEMENTED/FIXED
+            if 'PSK' in vector['protocol_name']:  # no old NoisePSK tests
+                continue  # TODO REMOVE WHEN rev30 SUPPORT IS IMPLEMENTED/FIXED
             for key, value in vector.copy().items():
                 if key in byte_fields:
                     vector[key] = value.encode()
@@ -61,7 +60,7 @@ class TestVectors(object):
     def vector(self, request):
         yield request.param
 
-    def _prepare_handshake_state_kwargs(self, vector):
+    def _prepare_handshake_state_kwargs(self, vector, dh_fn):
         # TODO: This is ugly af, refactor it :/
         kwargs = {'init': {}, 'resp': {}}
         for role in ['init', 'resp']:
@@ -69,20 +68,20 @@ class TestVectors(object):
                 role_key = role + '_' + key
                 if role_key in vector:
                     if key in ['static', 'ephemeral']:
-                        kwargs[role][kwarg] = KeyPair25519.from_private_bytes(vector[role_key])  # TODO unify after adding 448
+                        kwargs[role][kwarg] = dh_fn.keypair_cls.from_private_bytes(vector[role_key])
                     elif key == 'remote_static':
-                        kwargs[role][kwarg] = KeyPair25519.from_public_bytes(vector[role_key])  # TODO unify after adding 448
+                        kwargs[role][kwarg] = dh_fn.keypair_cls.from_public_bytes(vector[role_key])
         return kwargs
 
     def test_vector(self, vector):
-        kwargs = self._prepare_handshake_state_kwargs(vector)
-
         if 'init_psks' in vector and 'resp_psks' in vector:
             init_protocol = NoiseProtocol(vector['protocol_name'], psks=vector['init_psks'])
             resp_protocol = NoiseProtocol(vector['protocol_name'], psks=vector['resp_psks'])
         else:
             init_protocol = NoiseProtocol(vector['protocol_name'])
             resp_protocol = NoiseProtocol(vector['protocol_name'])
+
+        kwargs = self._prepare_handshake_state_kwargs(vector, init_protocol.dh_fn)
 
         kwargs['init'].update(noise_protocol=init_protocol, initiator=True, prologue=vector['init_prologue'])
         kwargs['resp'].update(noise_protocol=resp_protocol, initiator=False, prologue=vector['resp_prologue'])

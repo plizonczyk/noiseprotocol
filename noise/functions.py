@@ -2,14 +2,15 @@ import abc
 from functools import partial
 import hashlib
 import hmac
-
-from .crypto import ed448
+import os
 
 from cryptography.hazmat.backends import default_backend
 # from cryptography.hazmat.primitives import hashes  # Turn back on when Cryptography gets fixed
 from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
 # from cryptography.hazmat.primitives.hmac import HMAC  # Turn back on when Cryptography gets fixed
+
+from .crypto import X448
 
 backend = default_backend()
 
@@ -19,10 +20,15 @@ class DH(object):
         if method == 'ed25519':
             self.method = method
             self.dhlen = 32
+            self.keypair_cls = KeyPair25519
             self.generate_keypair = self._25519_generate_keypair
             self.dh = self._25519_dh
         elif method == 'ed448':
-            raise NotImplementedError
+            self.method = method
+            self.dhlen = 56
+            self.keypair_cls = KeyPair448
+            self.generate_keypair = self._448_generate_keypair
+            self.dh = self._448_dh
         else:
             raise NotImplementedError('DH method: {}'.format(method))
 
@@ -31,8 +37,14 @@ class DH(object):
         public_key = private_key.public_key()
         return _KeyPair(private_key, public_key, public_key.public_bytes())
 
-    def _25519_dh(self, keypair: 'x25519.X25519PrivateKey', public_key: 'x25519.X25519PublicKey') -> bytes:
-        return keypair.exchange(public_key)
+    def _25519_dh(self, private_key: 'x25519.X25519PrivateKey', public_key: 'x25519.X25519PublicKey') -> bytes:
+        return private_key.exchange(public_key)
+
+    def _448_generate_keypair(self) -> '_KeyPair':
+        return KeyPair448.new()
+
+    def _448_dh(self, private_key: bytes, public_key: bytes) -> bytes:
+        return X448.mul(private_key, public_key)
 
 
 class Cipher(object):
@@ -168,12 +180,30 @@ class KeyPair25519(_KeyPair):
         return cls(public=public, public_bytes=public.public_bytes())
 
 
+class KeyPair448(_KeyPair):
+    @classmethod
+    def from_private_bytes(cls, private_bytes):
+        private = private_bytes
+        public = X448.mul_5(private)
+        return cls(private=private, public=public, public_bytes=public)
+
+    @classmethod
+    def from_public_bytes(cls, public_bytes):
+        return cls(public=public_bytes, public_bytes=public_bytes)
+
+    @classmethod
+    def new(cls):
+        private = os.urandom(56)
+        public = X448.mul_5(private)
+        return cls(private=private, public=public, public_bytes=public)
+
+
 # Available crypto functions
 # TODO: Check if it's safe to use one instance globally per cryptoalgorithm - i.e. if wrapper only provides interface
 # If not - switch to partials(?)
 dh_map = {
     '25519': DH('ed25519'),
-    # '448': DH('ed448')  # TODO uncomment when ed448 is implemented
+    '448': DH('ed448')
 }
 
 cipher_map = {
@@ -191,7 +221,7 @@ hash_map = {
 
 keypair_map = {
     '25519': KeyPair25519,
-    # '448': DH('ed448')  # TODO uncomment when ed448 is implemented
+    '448': KeyPair448
 }
 
 
