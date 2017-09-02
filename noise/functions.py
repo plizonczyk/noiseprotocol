@@ -1,4 +1,5 @@
 import abc
+import warnings
 from functools import partial
 import hashlib
 import hmac
@@ -186,6 +187,10 @@ class KeyPair25519(_KeyPair):
 
 
 class KeyPair448(_KeyPair):
+    def __init__(self, *args, **kwargs):
+        super(KeyPair448, self).__init__(*args, **kwargs)
+        warnings.warn('This implementation of ed448 is likely to be very insecure! USE ONLY FOR TESTING!')
+
     @classmethod
     def from_private_bytes(cls, private_bytes):
         private = private_bytes

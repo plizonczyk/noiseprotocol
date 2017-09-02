@@ -1,11 +1,6 @@
-import warnings
-
-
 DHLEN = 56
 P = 2 ** 448 - 2 ** 224 - 1
 A24 = 39081
-
-warnings.warn('This implementation of ed448 is likely to be very insecure! USE ONLY FOR TESTING!')
 
 
 class X448(object):

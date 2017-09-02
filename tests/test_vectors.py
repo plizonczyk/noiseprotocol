@@ -55,6 +55,7 @@ def idfn(vector):
     return vector['protocol_name']
 
 
+@pytest.mark.filterwarnings('ignore: This implementation')
 class TestVectors(object):
     @pytest.fixture(params=_prepare_test_vectors(), ids=idfn)
     def vector(self, request):
