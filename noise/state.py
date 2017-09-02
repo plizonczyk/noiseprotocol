@@ -1,3 +1,5 @@
+from typing import Union
+
 from .constants import Empty, TOKEN_E, TOKEN_S, TOKEN_EE, TOKEN_ES, TOKEN_SE, TOKEN_SS, TOKEN_PSK
 
 
@@ -59,7 +61,6 @@ class CipherState(object):
         plaintext = self.noise_protocol.cipher_fn.decrypt(self.k, self.n, ad, ciphertext)
         self.n = self.n + 1
         return plaintext
-
 
 
 class SymmetricState(object):
@@ -228,7 +229,6 @@ class HandshakeState(object):
         # Create HandshakeState
         instance = cls()
         instance.noise_protocol = noise_protocol
-        noise_protocol.handshake_state = instance
 
         # Originally in specification:
         # "Derives a protocol_name byte sequence by combining the names for
@@ -263,7 +263,7 @@ class HandshakeState(object):
 
         return instance
 
-    def write_message(self, payload: bytes, message_buffer):
+    def write_message(self, payload: Union[bytes, bytearray], message_buffer: bytearray):
         """
         Comments below are mostly copied from specification.
         :param payload: byte sequence which may be zero-length
@@ -277,14 +277,14 @@ class HandshakeState(object):
             if token == TOKEN_E:
                 # Sets e = GENERATE_KEYPAIR(). Appends e.public_key to the buffer. Calls MixHash(e.public_key)
                 self.e = self.noise_protocol.dh_fn.generate_keypair() if isinstance(self.e, Empty) else self.e  # TODO: it's workaround, otherwise use mock
-                message_buffer.write(self.e.public_bytes)
+                message_buffer += self.e.public_bytes
                 self.symmetric_state.mix_hash(self.e.public_bytes)
                 if self.noise_protocol.is_psk_handshake:
                     self.symmetric_state.mix_key(self.e.public_bytes)
 
             elif token == TOKEN_S:
                 # Appends EncryptAndHash(s.public_key) to the buffer
-                message_buffer.write(self.symmetric_state.encrypt_and_hash(self.s.public_bytes))
+                message_buffer += self.symmetric_state.encrypt_and_hash(self.s.public_bytes)
 
             elif token == TOKEN_EE:
                 # Calls MixKey(DH(e, re))
@@ -315,13 +315,13 @@ class HandshakeState(object):
                 raise NotImplementedError('Pattern token: {}'.format(token))
 
         # Appends EncryptAndHash(payload) to the buffer
-        message_buffer.write(self.symmetric_state.encrypt_and_hash(payload))
+        message_buffer += self.symmetric_state.encrypt_and_hash(payload)
 
         # If there are no more message patterns returns two new CipherState objects by calling Split()
         if len(self.message_patterns) == 0:
             return self.symmetric_state.split()
 
-    def read_message(self, message: bytes, payload_buffer):
+    def read_message(self, message: Union[bytes, bytearray], payload_buffer: bytearray):
         """
         Comments below are mostly copied from specification.
         :param message: byte sequence containing a Noise handshake message
@@ -335,7 +335,8 @@ class HandshakeState(object):
         for token in message_pattern:
             if token == TOKEN_E:
                 # Sets re to the next DHLEN bytes from the message. Calls MixHash(re.public_key).
-                self.re = self.noise_protocol.keypair_fn.from_public_bytes(message.read(dhlen))
+                self.re = self.noise_protocol.keypair_fn.from_public_bytes(bytes(message[:dhlen]))
+                message = message[dhlen:]
                 self.symmetric_state.mix_hash(self.re.public_bytes)
                 if self.noise_protocol.is_psk_handshake:
                     self.symmetric_state.mix_key(self.re.public_bytes)
@@ -344,9 +345,11 @@ class HandshakeState(object):
                 # Sets temp to the next DHLEN + 16 bytes of the message if HasKey() == True, or to the next DHLEN bytes
                 # otherwise. Sets rs to DecryptAndHash(temp).
                 if self.noise_protocol.cipher_state_handshake.has_key():
-                    temp = message.read(dhlen + 16)
+                    temp = bytes(message[:dhlen + 16])
+                    message = message[dhlen + 16:]
                 else:
-                    temp = message.read(dhlen)
+                    temp = bytes(message[:dhlen])
+                    message = message[dhlen:]
                 self.rs = self.noise_protocol.keypair_fn.from_public_bytes(self.symmetric_state.decrypt_and_hash(temp))
 
             elif token == TOKEN_EE:
@@ -378,7 +381,7 @@ class HandshakeState(object):
                 raise NotImplementedError('Pattern token: {}'.format(token))
 
         # Calls DecryptAndHash() on the remaining bytes of the message and stores the output into payload_buffer.
-        payload_buffer.write(self.symmetric_state.decrypt_and_hash(message.read()))
+        payload_buffer += self.symmetric_state.decrypt_and_hash(bytes(message))
 
         # If there are no more message patterns returns two new CipherState objects by calling Split()
         if len(self.message_patterns) == 0:

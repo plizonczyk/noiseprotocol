@@ -14,3 +14,5 @@ TOKEN_PSK = 'psk'
 
 # In bytes, as in Section 8 of specification (rev 32)
 MAX_PROTOCOL_NAME_LEN = 255
+
+MAX_MESSAGE_LEN = 65535

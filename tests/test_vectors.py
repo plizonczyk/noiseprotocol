@@ -5,8 +5,8 @@ import os
 
 import pytest
 
-from noise.state import HandshakeState, CipherState
-from noise.noise_protocol import NoiseProtocol
+from noise.state import CipherState
+from noise.builder import NoiseBuilder, Keypair
 
 logger = logging.getLogger(__name__)
 
@@ -60,78 +60,73 @@ class TestVectors(object):
     def vector(self, request):
         yield request.param
 
-    def _prepare_handshake_state_kwargs(self, vector, dh_fn):
-        # TODO: This is ugly af, refactor it :/
-        kwargs = {'init': {}, 'resp': {}}
-        for role in ['init', 'resp']:
-            for key, kwarg in [('static', 's'), ('ephemeral', 'e'), ('remote_static', 'rs')]:
-                role_key = role + '_' + key
-                if role_key in vector:
-                    if key in ['static', 'ephemeral']:
-                        kwargs[role][kwarg] = dh_fn.keypair_cls.from_private_bytes(vector[role_key])
-                    elif key == 'remote_static':
-                        kwargs[role][kwarg] = dh_fn.keypair_cls.from_public_bytes(vector[role_key])
-        return kwargs
+    def _set_keypairs(self, vector, builder):
+        role = 'init' if builder.noise_protocol.initiator else 'resp'
+        setters = [
+            (builder.set_keypair_from_private_bytes, Keypair.STATIC, role + '_static'),
+            (builder.set_keypair_from_private_bytes, Keypair.EPHEMERAL, role + '_ephemeral'),
+            (builder.set_keypair_from_public_bytes, Keypair.REMOTE_STATIC, role + '_remote_static')
+        ]
+        for fn, keypair, name in setters:
+            if name in vector:
+                fn(keypair, vector[name])
 
     def test_vector(self, vector):
+        initiator = NoiseBuilder.from_name(vector['protocol_name'])
+        responder = NoiseBuilder.from_name(vector['protocol_name'])
         if 'init_psks' in vector and 'resp_psks' in vector:
-            init_protocol = NoiseProtocol(vector['protocol_name'], psks=vector['init_psks'])
-            resp_protocol = NoiseProtocol(vector['protocol_name'], psks=vector['resp_psks'])
-        else:
-            init_protocol = NoiseProtocol(vector['protocol_name'])
-            resp_protocol = NoiseProtocol(vector['protocol_name'])
+            initiator.set_psks(psks=vector['init_psks'])
+            responder.set_psks(psks=vector['resp_psks'])
 
-        kwargs = self._prepare_handshake_state_kwargs(vector, init_protocol.dh_fn)
+        initiator.set_prologue(vector['init_prologue'])
+        initiator.set_as_initiator()
+        self._set_keypairs(vector, initiator)
 
-        kwargs['init'].update(noise_protocol=init_protocol, initiator=True, prologue=vector['init_prologue'])
-        kwargs['resp'].update(noise_protocol=resp_protocol, initiator=False, prologue=vector['resp_prologue'])
+        responder.set_prologue(vector['resp_prologue'])
+        responder.set_as_responder()
+        self._set_keypairs(vector, responder)
 
-        initiator = HandshakeState.initialize(**kwargs['init'])
-        responder = HandshakeState.initialize(**kwargs['resp'])
+        initiator.start_handshake()
+        responder.start_handshake()
+
         initiator_to_responder = True
-
         handshake_finished = False
         for message in vector['messages']:
             if not handshake_finished:
-                message_buffer = io.BytesIO()
-                payload_buffer = io.BytesIO()
                 if initiator_to_responder:
                     sender, receiver = initiator, responder
                 else:
                     sender, receiver = responder, initiator
 
-                sender_result = sender.write_message(message['payload'], message_buffer)
-                assert message_buffer.getbuffer().tobytes() == message['ciphertext']
+                sender_result = sender.write_message(message['payload'])
+                assert sender_result == message['ciphertext']
 
-                message_buffer.seek(0)
-                receiver_result = receiver.read_message(message_buffer, payload_buffer)
-                assert payload_buffer.getbuffer().tobytes() == message['payload']
+                receiver_result = receiver.read_message(sender_result)
+                assert receiver_result == message['payload']
 
-                if sender_result is None or receiver_result is None:
+                if not (sender.handshake_finished and receiver.handshake_finished):
                     # Not finished with handshake, fail if one would finish before other
-                    assert sender_result == receiver_result
+                    assert sender.handshake_finished == receiver.handshake_finished
                 else:
                     # Handshake done
                     handshake_finished = True
-                    assert isinstance(sender_result[0], CipherState)
-                    assert isinstance(sender_result[1], CipherState)
-                    assert isinstance(receiver_result[0], CipherState)
-                    assert isinstance(receiver_result[1], CipherState)
 
                     # Verify handshake hash
-                    assert init_protocol.symmetric_state.h == resp_protocol.symmetric_state.h == vector['handshake_hash']
+                    assert initiator.noise_protocol.handshake_hash == responder.noise_protocol.handshake_hash == vector['handshake_hash']
 
                     # Verify split cipherstates keys
-                    assert init_protocol.cipher_state_encrypt.k == resp_protocol.cipher_state_decrypt.k
-                    if not init_protocol.pattern.one_way:
-                        assert init_protocol.cipher_state_decrypt.k == resp_protocol.cipher_state_encrypt.k
+                    assert initiator.noise_protocol.cipher_state_encrypt.k == responder.noise_protocol.cipher_state_decrypt.k
+                    if not initiator.noise_protocol.pattern.one_way:
+                        assert initiator.noise_protocol.cipher_state_decrypt.k == responder.noise_protocol.cipher_state_encrypt.k
+                    else:
+                        assert initiator.noise_protocol.cipher_state_decrypt is responder.noise_protocol.cipher_state_encrypt is None
             else:
-                if init_protocol.pattern.one_way or initiator_to_responder:
-                    sender, receiver = init_protocol, resp_protocol
+                if initiator.noise_protocol.pattern.one_way or initiator_to_responder:
+                    sender, receiver = initiator, responder
                 else:
-                    sender, receiver = resp_protocol, init_protocol
-                ciphertext = sender.cipher_state_encrypt.encrypt_with_ad(None, message['payload'])
+                    sender, receiver = responder, initiator
+                ciphertext = sender.encrypt(message['payload'])
                 assert ciphertext == message['ciphertext']
-                plaintext = receiver.cipher_state_decrypt.decrypt_with_ad(None, message['ciphertext'])
+                plaintext = receiver.decrypt(message['ciphertext'])
                 assert plaintext == message['payload']
             initiator_to_responder = not initiator_to_responder
