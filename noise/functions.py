@@ -9,7 +9,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
 # from cryptography.hazmat.primitives.hmac import HMAC  # Turn back on when Cryptography gets fixed
-
+from noise.constants import MAX_NONCE
 from .crypto import X448
 
 backend = default_backend()
@@ -53,10 +53,12 @@ class Cipher(object):
             self._cipher = AESGCM
             self.encrypt = self._aesgcm_encrypt
             self.decrypt = self._aesgcm_decrypt
+            self.rekey = self._default_rekey
         elif method == 'ChaCha20':
             self._cipher = ChaCha20Poly1305
             self.encrypt = self._chacha20_encrypt
             self.decrypt = self._chacha20_decrypt
+            self.rekey = self._default_rekey
         else:
             raise NotImplementedError('Cipher method: {}'.format(method))
 
@@ -84,6 +86,9 @@ class Cipher(object):
 
     def _chacha20_nonce(self, n):
         return b'\x00\x00\x00\x00' + n.to_bytes(length=8, byteorder='little')
+
+    def _default_rekey(self, k):
+        return self.encrypt(k, MAX_NONCE, b'', b'\x00' * 32)[:32]
 
 
 class Hash(object):

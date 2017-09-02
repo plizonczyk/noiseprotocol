@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Tuple, List
+from typing import Tuple
 
 from noise.exceptions import NoiseProtocolNameError, NoisePSKError
 from noise.state import HandshakeState
@@ -133,3 +133,4 @@ class NoiseProtocol(object):
             if value:
                 kwargs[keypair] = value
         self.handshake_state = HandshakeState.initialize(self, **kwargs)
+        self.symmetric_state = self.handshake_state.symmetric_state

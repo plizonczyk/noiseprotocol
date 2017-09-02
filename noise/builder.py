@@ -69,11 +69,11 @@ class NoiseBuilder(object):
         self.noise_protocol.initiator = False
         self._next_fn = self.read_message
 
-    def set_keypair_from_private_bytes(self, keypair, private_bytes: bytes):
+    def set_keypair_from_private_bytes(self, keypair: Keypair, private_bytes: bytes):
         self.noise_protocol.keypairs[_keypairs[keypair]] = \
             self.noise_protocol.dh_fn.keypair_cls.from_private_bytes(private_bytes)
 
-    def set_keypair_from_public_bytes(self, keypair, private_bytes: bytes):
+    def set_keypair_from_public_bytes(self, keypair: Keypair, private_bytes: bytes):
         self.noise_protocol.keypairs[_keypairs[keypair]] = \
             self.noise_protocol.dh_fn.keypair_cls.from_public_bytes(private_bytes)
 
@@ -129,3 +129,12 @@ class NoiseBuilder(object):
 
     def decrypt(self, data: bytes):
         return self.noise_protocol.cipher_state_decrypt.decrypt_with_ad(None, data)
+
+    def get_handshake_hash(self) -> bytes:
+        return self.noise_protocol.handshake_hash
+
+    def rekey_inbound_cipher(self):
+        self.noise_protocol.cipher_state_decrypt.rekey()
+
+    def rekey_outbound_cipher(self):
+        self.noise_protocol.cipher_state_encrypt.rekey()

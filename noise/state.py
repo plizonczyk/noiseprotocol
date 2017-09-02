@@ -1,6 +1,6 @@
 from typing import Union
 
-from .constants import Empty, TOKEN_E, TOKEN_S, TOKEN_EE, TOKEN_ES, TOKEN_SE, TOKEN_SS, TOKEN_PSK
+from .constants import Empty, TOKEN_E, TOKEN_S, TOKEN_EE, TOKEN_ES, TOKEN_SE, TOKEN_SS, TOKEN_PSK, MAX_NONCE
 
 
 class CipherState(object):
@@ -34,7 +34,7 @@ class CipherState(object):
         :param plaintext: bytes sequence
         :return: ciphertext bytes sequence
         """
-        if self.n == 2**64 - 1:
+        if self.n == MAX_NONCE:
             raise Exception('Nonce has depleted!')
 
         if not self.has_key():
@@ -62,6 +62,9 @@ class CipherState(object):
         self.n = self.n + 1
         return plaintext
 
+    def rekey(self):
+        self.k = self.noise_protocol.cipher_fn.rekey(self.k)
+
 
 class SymmetricState(object):
     """
@@ -87,7 +90,6 @@ class SymmetricState(object):
         # Create SymmetricState
         instance = cls()
         instance.noise_protocol = noise_protocol
-        noise_protocol.symmetric_state = instance
 
         # If protocol_name is less than or equal to HASHLEN bytes in length, sets h equal to protocol_name with zero
         # bytes appended to make HASHLEN bytes. Otherwise sets h = HASH(protocol_name).
