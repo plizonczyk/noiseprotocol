@@ -1,7 +1,8 @@
+import warnings
 from functools import partial
 from typing import Tuple
 
-from noise.exceptions import NoiseProtocolNameError, NoisePSKError
+from noise.exceptions import NoiseProtocolNameError, NoisePSKError, NoiseValidationError
 from noise.state import HandshakeState
 from .constants import MAX_PROTOCOL_NAME_LEN, Empty
 from .functions import dh_map, cipher_map, hash_map, keypair_map, hmac_hash, hkdf
@@ -120,10 +121,17 @@ class NoiseProtocol(object):
                 raise NoisePSKError('Bad number of PSKs provided to this protocol! {} are required, '
                                     'given {}'.format(self.pattern.psk_count, len(self.psks)))
 
-        # TODO: Validate keypairs
-        # TODO: Validate initiator set
-        # TODO: Validate buffers set
-        # TODO: Warn about ephemerals
+        if self.initiator is None:
+            raise NoiseValidationError('You need to set role with NoiseBuilder.set_as_initiator '
+                                       'or NoiseBuilder.set_as_responder')
+
+        for keypair in self.pattern.get_required_keypairs(self.initiator):
+            if self.keypairs[keypair] is None:
+                raise NoiseValidationError('Keypair {} has to be set for chosen handshake pattern'.format(keypair))
+
+        if not isinstance(self.keypairs['e'], Empty) or not isinstance(self.keypairs['re'], Empty):
+            warnings.warn('One of ephemeral keypairs is already set. '
+                          'This is OK for testing, but should NEVER happen in production!')
 
     def initialise_handshake_state(self):
         kwargs = {'initiator': self.initiator}

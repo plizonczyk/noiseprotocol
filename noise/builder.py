@@ -1,7 +1,10 @@
 from enum import Enum, auto
 from typing import Union, List
 
-from noise.exceptions import NoisePSKError, NoiseValueError, NoiseHandshakeError
+from cryptography.exceptions import InvalidTag
+
+from noise.constants import MAX_MESSAGE_LEN
+from noise.exceptions import NoisePSKError, NoiseValueError, NoiseHandshakeError, NoiseInvalidMessage
 from .noise_protocol import NoiseProtocol
 
 
@@ -123,12 +126,17 @@ class NoiseBuilder(object):
         return buffer
 
     def encrypt(self, data: bytes):
-        if not isinstance(data, bytes) or len(data) > 65535:
-            raise Exception  #todo
+        if not isinstance(data, bytes) or len(data) > MAX_MESSAGE_LEN:
+            raise NoiseInvalidMessage('Data must be bytes and less or equal {} bytes in length'.format(MAX_MESSAGE_LEN))
         return self.noise_protocol.cipher_state_encrypt.encrypt_with_ad(None, data)
 
     def decrypt(self, data: bytes):
-        return self.noise_protocol.cipher_state_decrypt.decrypt_with_ad(None, data)
+        if not isinstance(data, bytes) or len(data) > MAX_MESSAGE_LEN:
+            raise NoiseInvalidMessage('Data must be bytes and less or equal {} bytes in length'.format(MAX_MESSAGE_LEN))
+        try:
+            return self.noise_protocol.cipher_state_decrypt.decrypt_with_ad(None, data)
+        except InvalidTag:
+            raise NoiseInvalidMessage('Failed authentication of message')
 
     def get_handshake_hash(self) -> bytes:
         return self.noise_protocol.handshake_hash

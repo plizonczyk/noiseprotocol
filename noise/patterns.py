@@ -19,6 +19,7 @@ class Pattern(object):
         # List of lists of valid tokens, alternating between tokens for initiator and responder
         self.tokens = []
 
+        self.name = ''
         self.has_pre_messages = any(map(lambda x: len(x) > 0, self.pre_messages))
         self.one_way = False
         self.psk_count = 0
@@ -54,6 +55,20 @@ class Pattern(object):
             else:
                 raise ValueError('Unknown pattern modifier {}'.format(modifier))
 
+    def get_required_keypairs(self, initiator: bool) -> list:
+        required = []
+        if initiator:
+            if self.name[0] in ['K', 'X', 'I']:
+                required.append('s')
+            if self.one_way or self.name[1] == 'K':
+                required.append('rs')
+        else:
+            if self.name[0] == 'K':
+                required.append('rs')
+            if self.one_way or self.name[1] in ['K', 'X']:
+                required.append('s')
+        return required
+
 
 # One-way patterns
 
@@ -66,6 +81,7 @@ class OneWayPattern(Pattern):
 class PatternN(OneWayPattern):
     def __init__(self):
         super(PatternN, self).__init__()
+        self.name = 'N'
 
         self.pre_messages = [
             [],
@@ -79,6 +95,7 @@ class PatternN(OneWayPattern):
 class PatternK(OneWayPattern):
     def __init__(self):
         super(PatternK, self).__init__()
+        self.name = 'K'
 
         self.pre_messages = [
             [TOKEN_S],
@@ -92,6 +109,7 @@ class PatternK(OneWayPattern):
 class PatternX(OneWayPattern):
     def __init__(self):
         super(PatternX, self).__init__()
+        self.name = 'X'
 
         self.pre_messages = [
             [],
@@ -107,6 +125,7 @@ class PatternX(OneWayPattern):
 class PatternNN(Pattern):
     def __init__(self):
         super(PatternNN, self).__init__()
+        self.name = 'NN'
 
         self.tokens = [
             [TOKEN_E],
@@ -117,6 +136,7 @@ class PatternNN(Pattern):
 class PatternKN(Pattern):
     def __init__(self):
         super(PatternKN, self).__init__()
+        self.name = 'KN'
 
         self.pre_messages = [
             [TOKEN_S],
@@ -131,6 +151,7 @@ class PatternKN(Pattern):
 class PatternNK(Pattern):
     def __init__(self):
         super(PatternNK, self).__init__()
+        self.name = 'NK'
 
         self.pre_messages = [
             [],
@@ -145,6 +166,7 @@ class PatternNK(Pattern):
 class PatternKK(Pattern):
     def __init__(self):
         super(PatternKK, self).__init__()
+        self.name = 'KK'
 
         self.pre_messages = [
             [TOKEN_S],
@@ -159,6 +181,7 @@ class PatternKK(Pattern):
 class PatternNX(Pattern):
     def __init__(self):
         super(PatternNX, self).__init__()
+        self.name = 'NX'
 
         self.tokens = [
             [TOKEN_E],
@@ -169,6 +192,7 @@ class PatternNX(Pattern):
 class PatternKX(Pattern):
     def __init__(self):
         super(PatternKX, self).__init__()
+        self.name = 'KX'
 
         self.pre_messages = [
             [TOKEN_S],
@@ -183,6 +207,7 @@ class PatternKX(Pattern):
 class PatternXN(Pattern):
     def __init__(self):
         super(PatternXN, self).__init__()
+        self.name = 'XN'
 
         self.tokens = [
             [TOKEN_E],
@@ -194,6 +219,7 @@ class PatternXN(Pattern):
 class PatternIN(Pattern):
     def __init__(self):
         super(PatternIN, self).__init__()
+        self.name = 'IN'
 
         self.tokens = [
             [TOKEN_E, TOKEN_S],
@@ -204,6 +230,7 @@ class PatternIN(Pattern):
 class PatternXK(Pattern):
     def __init__(self):
         super(PatternXK, self).__init__()
+        self.name = 'XK'
 
         self.pre_messages = [
             [],
@@ -219,6 +246,7 @@ class PatternXK(Pattern):
 class PatternIK(Pattern):
     def __init__(self):
         super(PatternIK, self).__init__()
+        self.name = 'IK'
 
         self.pre_messages = [
             [],
@@ -233,6 +261,7 @@ class PatternIK(Pattern):
 class PatternXX(Pattern):
     def __init__(self):
         super(PatternXX, self).__init__()
+        self.name = 'XX'
 
         self.tokens = [
             [TOKEN_E],
@@ -244,6 +273,7 @@ class PatternXX(Pattern):
 class PatternIX(Pattern):
     def __init__(self):
         super(PatternIX, self).__init__()
+        self.name = 'IX'
 
         self.tokens = [
             [TOKEN_E, TOKEN_S],

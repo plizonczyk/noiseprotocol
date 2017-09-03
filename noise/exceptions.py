@@ -12,3 +12,15 @@ class NoiseValueError(Exception):
 
 class NoiseHandshakeError(Exception):
     pass
+
+
+class NoiseInvalidMessage(Exception):
+    pass
+
+
+class NoiseMaxNonceError(Exception):
+    pass
+
+
+class NoiseValidationError(Exception):
+    pass

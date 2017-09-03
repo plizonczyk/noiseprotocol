@@ -1,6 +1,6 @@
 import abc
 import warnings
-from functools import partial
+from functools import partial  # Turn back on when Cryptography gets fixed
 import hashlib
 import hmac
 import os
@@ -208,9 +208,6 @@ class KeyPair448(_KeyPair):
         return cls(private=private, public=public, public_bytes=public)
 
 
-# Available crypto functions
-# TODO: Check if it's safe to use one instance globally per cryptoalgorithm - i.e. if wrapper only provides interface
-# If not - switch to partials(?)
 dh_map = {
     '25519': DH('ed25519'),
     '448': DH('ed448')
@@ -222,7 +219,6 @@ cipher_map = {
 }
 
 hash_map = {
-    # TODO benchmark pycryptodome vs hashlib implementation
     'BLAKE2s': Hash('BLAKE2s'),
     'BLAKE2b': Hash('BLAKE2b'),
     'SHA256': Hash('SHA256'),

@@ -55,7 +55,8 @@ def idfn(vector):
     return vector['protocol_name']
 
 
-@pytest.mark.filterwarnings('ignore: This implementation')
+@pytest.mark.filterwarnings('ignore: This implementation of ed448')
+@pytest.mark.filterwarnings('ignore: One of ephemeral keypairs')
 class TestVectors(object):
     @pytest.fixture(params=_prepare_test_vectors(), ids=idfn)
     def vector(self, request):

@@ -1,5 +1,6 @@
 from typing import Union
 
+from noise.exceptions import NoiseMaxNonceError
 from .constants import Empty, TOKEN_E, TOKEN_S, TOKEN_EE, TOKEN_ES, TOKEN_SE, TOKEN_SS, TOKEN_PSK, MAX_NONCE
 
 
@@ -53,7 +54,7 @@ class CipherState(object):
         :return: plaintext bytes sequence
         """
         if self.n == 2**64 - 1:
-            raise Exception('Nonce has depleted!')
+            raise NoiseMaxNonceError('Nonce has depleted!')
 
         if not self.has_key():
             return ciphertext
@@ -210,8 +211,8 @@ class HandshakeState(object):
         self.message_patterns = None
 
     @classmethod
-    def initialize(cls, noise_protocol: 'NoiseProtocol', initiator: bool, prologue: bytes=b'', s: bytes=None,
-                   e: bytes=None, rs: bytes=None, re: bytes=None) -> 'HandshakeState':  # TODO update typing (keypair)
+    def initialize(cls, noise_protocol: 'NoiseProtocol', initiator: bool, prologue: bytes=b'', s: '_KeyPair'=None,
+                   e: '_KeyPair'=None, rs: '_KeyPair'=None, re: '_KeyPair'=None) -> 'HandshakeState':
         """
         Constructor method.
         Comments below are mostly copied from specification.
@@ -278,7 +279,7 @@ class HandshakeState(object):
         for token in message_pattern:
             if token == TOKEN_E:
                 # Sets e = GENERATE_KEYPAIR(). Appends e.public_key to the buffer. Calls MixHash(e.public_key)
-                self.e = self.noise_protocol.dh_fn.generate_keypair() if isinstance(self.e, Empty) else self.e  # TODO: it's workaround, otherwise use mock
+                self.e = self.noise_protocol.dh_fn.generate_keypair() if isinstance(self.e, Empty) else self.e
                 message_buffer += self.e.public_bytes
                 self.symmetric_state.mix_hash(self.e.public_bytes)
                 if self.noise_protocol.is_psk_handshake:
