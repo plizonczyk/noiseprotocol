@@ -129,7 +129,7 @@ class NoiseProtocol(object):
             if self.keypairs[keypair] is None:
                 raise NoiseValidationError('Keypair {} has to be set for chosen handshake pattern'.format(keypair))
 
-        if not isinstance(self.keypairs['e'], Empty) or not isinstance(self.keypairs['re'], Empty):
+        if self.keypairs['e'] is not None or self.keypairs['re'] is not None:
             warnings.warn('One of ephemeral keypairs is already set. '
                           'This is OK for testing, but should NEVER happen in production!')
 
