@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 vector_files = [
     'vectors/cacophony.txt',
-    'vectors/noise-c-basic.txt'
+    'vectors/snow-multipsk.txt'
 ]
 
 # As in test vectors specification (https://github.com/noiseprotocol/noise_wiki/wiki/Test-vectors)
@@ -114,7 +114,8 @@ class TestVectors(object):
                     handshake_finished = True
 
                     # Verify handshake hash
-                    assert initiator.noise_protocol.handshake_hash == responder.noise_protocol.handshake_hash == vector['handshake_hash']
+                    if 'handshake_hash' in vector:
+                        assert initiator.noise_protocol.handshake_hash == responder.noise_protocol.handshake_hash == vector['handshake_hash']
 
                     # Verify split cipherstates keys
                     assert initiator.noise_protocol.cipher_state_encrypt.k == responder.noise_protocol.cipher_state_decrypt.k
