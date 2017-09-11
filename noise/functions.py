@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
 # from cryptography.hazmat.primitives.hmac import HMAC  # Turn back on when Cryptography gets fixed
 from noise.constants import MAX_NONCE
+from noise.exceptions import NoiseValueError
 from .crypto import X448
 
 backend = default_backend()
@@ -36,15 +37,19 @@ class DH(object):
     def _25519_generate_keypair(self) -> '_KeyPair':
         private_key = x25519.X25519PrivateKey.generate()
         public_key = private_key.public_key()
-        return _KeyPair(private_key, public_key, public_key.public_bytes())
+        return KeyPair25519(private_key, public_key, public_key.public_bytes())
 
     def _25519_dh(self, private_key: 'x25519.X25519PrivateKey', public_key: 'x25519.X25519PublicKey') -> bytes:
+        if not isinstance(private_key, x25519.X25519PrivateKey) or not isinstance(public_key, x25519.X25519PublicKey):
+            raise NoiseValueError('Invalid keys! Must be x25519.X25519PrivateKey and x25519.X25519PublicKey instances')
         return private_key.exchange(public_key)
 
     def _448_generate_keypair(self) -> '_KeyPair':
         return KeyPair448.new()
 
     def _448_dh(self, private_key: bytes, public_key: bytes) -> bytes:
+        if len(private_key) != self.dhlen or len(public_key) != self.dhlen:
+            raise NoiseValueError('Invalid length of keys! Should be {}'.format(self.dhlen))
         return X448.mul(private_key, public_key)
 
 
@@ -176,12 +181,16 @@ class _KeyPair(object):
 class KeyPair25519(_KeyPair):
     @classmethod
     def from_private_bytes(cls, private_bytes):
+        if len(private_bytes) != 32:
+            raise NoiseValueError('Invalid length of private_bytes! Should be 32')
         private = x25519.X25519PrivateKey._from_private_bytes(private_bytes)
         public = private.public_key()
         return cls(private=private, public=public, public_bytes=public.public_bytes())
 
     @classmethod
     def from_public_bytes(cls, public_bytes):
+        if len(public_bytes) != 32:
+            raise NoiseValueError('Invalid length of public_bytes! Should be 32')
         public = x25519.X25519PublicKey.from_public_bytes(public_bytes)
         return cls(public=public, public_bytes=public.public_bytes())
 
@@ -193,12 +202,16 @@ class KeyPair448(_KeyPair):
 
     @classmethod
     def from_private_bytes(cls, private_bytes):
+        if len(private_bytes) != 56:
+            raise NoiseValueError('Invalid length of private_bytes! Should be 56')
         private = private_bytes
         public = X448.mul_5(private)
         return cls(private=private, public=public, public_bytes=public)
 
     @classmethod
     def from_public_bytes(cls, public_bytes):
+        if len(public_bytes) != 56:
+            raise NoiseValueError('Invalid length of private_bytes! Should be 56')
         return cls(public=public_bytes, public_bytes=public_bytes)
 
     @classmethod

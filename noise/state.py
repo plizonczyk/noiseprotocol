@@ -36,7 +36,7 @@ class CipherState(object):
         :return: ciphertext bytes sequence
         """
         if self.n == MAX_NONCE:
-            raise Exception('Nonce has depleted!')
+            raise NoiseMaxNonceError('Nonce has depleted!')
 
         if not self.has_key():
             return plaintext
@@ -53,7 +53,7 @@ class CipherState(object):
         :param ciphertext: bytes sequence
         :return: plaintext bytes sequence
         """
-        if self.n == 2**64 - 1:
+        if self.n == MAX_NONCE:
             raise NoiseMaxNonceError('Nonce has depleted!')
 
         if not self.has_key():

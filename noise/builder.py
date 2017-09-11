@@ -125,12 +125,12 @@ class NoiseBuilder(object):
             self.handshake_finished = True
         return buffer
 
-    def encrypt(self, data: bytes):
+    def encrypt(self, data: bytes) -> bytes:
         if not isinstance(data, bytes) or len(data) > MAX_MESSAGE_LEN:
             raise NoiseInvalidMessage('Data must be bytes and less or equal {} bytes in length'.format(MAX_MESSAGE_LEN))
         return self.noise_protocol.cipher_state_encrypt.encrypt_with_ad(None, data)
 
-    def decrypt(self, data: bytes):
+    def decrypt(self, data: bytes) -> bytes:
         if not isinstance(data, bytes) or len(data) > MAX_MESSAGE_LEN:
             raise NoiseInvalidMessage('Data must be bytes and less or equal {} bytes in length'.format(MAX_MESSAGE_LEN))
         try:

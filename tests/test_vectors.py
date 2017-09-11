@@ -1,11 +1,9 @@
-import io
 import json
 import logging
 import os
 
 import pytest
 
-from noise.state import CipherState
 from noise.builder import NoiseBuilder, Keypair
 
 logger = logging.getLogger(__name__)
@@ -32,10 +30,6 @@ def _prepare_test_vectors():
             vectors_list = json.load(fd)
 
         for vector in vectors_list:
-            if 'name' in vector and not 'protocol_name' in vector:  # noise-c-* workaround
-                vector['protocol_name'] = vector['name']
-            if 'PSK' in vector['protocol_name']:  # no old NoisePSK tests
-                continue  # TODO REMOVE WHEN rev30 SUPPORT IS IMPLEMENTED/FIXED
             for key, value in vector.copy().items():
                 if key in byte_fields:
                     vector[key] = value.encode()
