@@ -77,6 +77,7 @@ class SymmetricState(object):
         self.h = None
         self.ck = None
         self.noise_protocol = None
+        self.cipher_state = None
 
     @classmethod
     def initialize_symmetric(cls, noise_protocol: 'NoiseProtocol') -> 'SymmetricState':
@@ -103,9 +104,9 @@ class SymmetricState(object):
         instance.ck = instance.h
 
         # Calls InitializeKey(empty).
-        cipher_state = CipherState(noise_protocol)
-        cipher_state.initialize_key(Empty())
-        noise_protocol.cipher_state_handshake = cipher_state
+        instance.cipher_state = CipherState(noise_protocol)
+        instance.cipher_state.initialize_key(Empty())
+        noise_protocol.cipher_state_handshake = instance.cipher_state
 
         return instance
 
@@ -121,7 +122,7 @@ class SymmetricState(object):
             temp_k = temp_k[:32]
 
         # Calls InitializeKey(temp_k).
-        self.noise_protocol.cipher_state_handshake.initialize_key(temp_k)
+        self.cipher_state.initialize_key(temp_k)
 
     def mix_hash(self, data: bytes):
         """
@@ -139,7 +140,7 @@ class SymmetricState(object):
         if self.noise_protocol.hash_fn.hashlen == 64:
             temp_k = temp_k[:32]
         # Calls InitializeKey(temp_k).
-        self.noise_protocol.cipher_state_handshake.initialize_key(temp_k)
+        self.cipher_state.initialize_key(temp_k)
 
     def encrypt_and_hash(self, plaintext: bytes) -> bytes:
         """
@@ -148,7 +149,7 @@ class SymmetricState(object):
         :param plaintext: bytes sequence
         :return: ciphertext bytes sequence
         """
-        ciphertext = self.noise_protocol.cipher_state_handshake.encrypt_with_ad(self.h, plaintext)
+        ciphertext = self.cipher_state.encrypt_with_ad(self.h, plaintext)
         self.mix_hash(ciphertext)
         return ciphertext
 
@@ -159,7 +160,7 @@ class SymmetricState(object):
         :param ciphertext: bytes sequence
         :return: plaintext bytes sequence
         """
-        plaintext = self.noise_protocol.cipher_state_handshake.decrypt_with_ad(self.h, ciphertext)
+        plaintext = self.cipher_state.decrypt_with_ad(self.h, ciphertext)
         self.mix_hash(ciphertext)
         return plaintext
 

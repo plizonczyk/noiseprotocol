@@ -20,9 +20,11 @@ class Pattern(object):
         self.tokens = []
 
         self.name = ''
-        self.has_pre_messages = any(map(lambda x: len(x) > 0, self.pre_messages))
         self.one_way = False
         self.psk_count = 0
+
+    def has_pre_messages(self):
+        return any(map(lambda x: len(x) > 0, self.pre_messages))
 
     def get_initiator_pre_messages(self) -> list:
         return self.pre_messages[0].copy()

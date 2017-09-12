@@ -50,7 +50,6 @@ class NoiseProtocol(object):
 
         self.prologue = None
         self.initiator = None
-        self.one_way = False
         self.handshake_hash = None
 
         self.handshake_state = Empty()

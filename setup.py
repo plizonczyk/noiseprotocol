@@ -8,13 +8,13 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='noise-python',
+    name='noiseprotocol',
     version='0.1.0',
-    description='A sample Python project',  # TODO
+    description='Implementation of Noise Protocol Framework',
     long_description=long_description,
-    url='https://github.com/plizonczyk/',
+    url='https://github.com/plizonczyk/noiseprotocol',
     author='Piotr Lizonczyk',
-    author_email='piotr.lizonczyk@gmail.com',
+    author_email='plizonczyk.public@gmail.com',
     license='MIT',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -22,10 +22,12 @@ setup(
         'Topic :: Security :: Cryptography',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
+        # 'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        # 'Programming Language :: Python :: 3.7',
     ],
-    keywords='',  # TODO
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=[],  # TODO
+    keywords='cryptography noiseprotocol noise security',
+    packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
+    install_requires=['cryptography==2.0.3'],
+    python_requires='~=3.6',
 )

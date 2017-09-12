@@ -1,2 +1,1 @@
-pytest>=3.2.2
 cryptography==2.0.3
