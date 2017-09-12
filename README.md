@@ -1,6 +1,7 @@
 noiseprotocol
 =============
 [![Build Status](https://travis-ci.org/plizonczyk/noiseprotocol.svg?branch=master)](https://travis-ci.org/plizonczyk/noiseprotocol)
+[![PyPI](https://img.shields.io/pypi/v/noiseprotocol.svg)](https://pypi.python.org/pypi/noiseprotocol)
 
 This repository contains source code of **noiseprotocol** - a Python 3 implementation of [Noise Protocol Framework](http://www.noiseprotocol.org/).
 
