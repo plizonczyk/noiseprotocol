@@ -4,12 +4,16 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+try:
+    import pypandoc
+    with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+        long_description = pypandoc.convert('README.md', 'rst')
+except (IOError, ImportError):
+    long_description = 'Check https://github.com/plizonczyk/noiseprotocol for readme.'
 
 setup(
     name='noiseprotocol',
-    version='0.1.0',
+    version='0.1.1',
     description='Implementation of Noise Protocol Framework',
     long_description=long_description,
     url='https://github.com/plizonczyk/noiseprotocol',
