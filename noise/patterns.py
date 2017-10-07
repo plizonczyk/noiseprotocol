@@ -60,7 +60,7 @@ class Pattern(object):
     def get_required_keypairs(self, initiator: bool) -> list:
         required = []
         if initiator:
-            if self.name[0] in ['K', 'X', 'I']:
+            if self.name[0] in ('K', 'X', 'I'):
                 required.append('s')
             if self.one_way or self.name[1] == 'K':
                 required.append('rs')

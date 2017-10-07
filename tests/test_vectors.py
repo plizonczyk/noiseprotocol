@@ -15,10 +15,10 @@ vector_files = [
 
 # As in test vectors specification (https://github.com/noiseprotocol/noise_wiki/wiki/Test-vectors)
 # We use this to cast read strings into bytes
-byte_fields = ['protocol_name']
-hexbyte_fields = ['init_prologue', 'init_static', 'init_ephemeral', 'init_remote_static', 'resp_static',
-                  'resp_prologue', 'resp_ephemeral', 'resp_remote_static', 'handshake_hash']
-list_fields = ['init_psks', 'resp_psks']
+byte_field = 'protocol_name'
+hexbyte_fields = ('init_prologue', 'init_static', 'init_ephemeral', 'init_remote_static', 'resp_static',
+                  'resp_prologue', 'resp_ephemeral', 'resp_remote_static', 'handshake_hash')
+list_fields = ('init_psks', 'resp_psks')
 dict_field = 'messages'
 
 
@@ -31,7 +31,7 @@ def _prepare_test_vectors():
 
         for vector in vectors_list:
             for key, value in vector.copy().items():
-                if key in byte_fields:
+                if key == byte_field:
                     vector[key] = value.encode()
                 if key in hexbyte_fields:
                     vector[key] = bytes.fromhex(value)
