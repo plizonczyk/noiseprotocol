@@ -1,15 +1,13 @@
 import abc
 import warnings
-from functools import partial  # Turn back on when Cryptography gets fixed
-import hashlib
-import hmac
+from functools import partial
 import os
 
 from cryptography.hazmat.backends import default_backend
-# from cryptography.hazmat.primitives import hashes  # Turn back on when Cryptography gets fixed
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
-# from cryptography.hazmat.primitives.hmac import HMAC  # Turn back on when Cryptography gets fixed
+from cryptography.hazmat.primitives.hmac import HMAC
 from noise.constants import MAX_NONCE
 from noise.exceptions import NoiseValueError
 from .crypto import X448
@@ -103,60 +101,44 @@ class Hash(object):
             self.hashlen = 32
             self.blocklen = 64
             self.hash = self._hash_sha256
-            # self.fn = hashes.SHA256  # Turn back on when Cryptography gets fixed
-            self.fn = 'SHA256'
+            self.fn = hashes.SHA256
         elif method == 'SHA512':
             self.hashlen = 64
             self.blocklen = 128
             self.hash = self._hash_sha512
-            # self.fn = hashes.SHA512  # Turn back on when Cryptography gets fixed
-            self.fn = 'SHA512'
+            self.fn = hashes.SHA512
         elif method == 'BLAKE2s':
             self.hashlen = 32
             self.blocklen = 64
             self.hash = self._hash_blake2s
-            # self.fn = partial(hashes.BLAKE2s, digest_size=self.hashlen)  # Turn back on when Cryptography gets fixed
-            self.fn = 'blake2s'
+            self.fn = partial(hashes.BLAKE2s, digest_size=self.hashlen)
         elif method == 'BLAKE2b':
             self.hashlen = 64
             self.blocklen = 128
             self.hash = self._hash_blake2b
-            # self.fn = partial(hashes.BLAKE2b, digest_size=self.hashlen)  # Turn back on when Cryptography gets fixed
-            self.fn = 'blake2b'
+            self.fn = partial(hashes.BLAKE2b, digest_size=self.hashlen)
         else:
             raise NotImplementedError('Hash method: {}'.format(method))
 
     def _hash_sha256(self, data):
-        return hashlib.sha256(data).digest()
+        digest = hashes.Hash(hashes.SHA256(), backend)
+        digest.update(data)
+        return digest.finalize()
 
     def _hash_sha512(self, data):
-        return hashlib.sha512(data).digest()
+        digest = hashes.Hash(hashes.SHA512(), backend)
+        digest.update(data)
+        return digest.finalize()
 
     def _hash_blake2s(self, data):
-        return hashlib.blake2s(data).digest()
+        digest = hashes.Hash(hashes.BLAKE2s(digest_size=self.hashlen), backend)
+        digest.update(data)
+        return digest.finalize()
 
     def _hash_blake2b(self, data):
-        return hashlib.blake2b(data).digest()
-
-    # def _hash_sha256(self, data):   # Turn back on when Cryptography gets fixed
-    #     digest = hashes.Hash(hashes.SHA256(), backend)
-    #     digest.update(data)
-    #     return digest.finalize()
-    #
-    # def _hash_sha512(self, data):   # Turn back on when Cryptography gets fixed
-    #     digest = hashes.Hash(hashes.SHA512(), backend)
-    #     digest.update(data)
-    #     return digest.finalize()
-    #
-    # def _hash_blake2s(self, data):   # Turn back on when Cryptography gets fixed
-    #     digest = hashes.Hash(hashes.BLAKE2s(digest_size=self.hashlen), backend)
-    #     digest.update(data)
-    #     return digest.finalize()
-    #
-    # def _hash_blake2b(self, data):   # Turn back on when Cryptography gets fixed
-    #     digest = hashes.Hash(hashes.BLAKE2b(digest_size=self.hashlen), backend)
-    #     digest.update(data)
-    #     return digest.finalize()
+        digest = hashes.Hash(hashes.BLAKE2b(digest_size=self.hashlen), backend)
+        digest.update(data)
+        return digest.finalize()
 
 
 class _KeyPair(object):
@@ -244,15 +226,11 @@ keypair_map = {
 }
 
 
-# def hmac_hash(key, data, algorithm):  # Turn back on when Cryptography gets fixed
-#     # Applies HMAC using the HASH() function.
-#     hmac = HMAC(key=key, algorithm=algorithm(), backend=backend)
-#     hmac.update(data=data)
-#     return hmac.finalize()
-
 def hmac_hash(key, data, algorithm):
     # Applies HMAC using the HASH() function.
-    return hmac.new(key, data, algorithm).digest()
+    hmac = HMAC(key=key, algorithm=algorithm(), backend=backend)
+    hmac.update(data=data)
+    return hmac.finalize()
 
 
 def hkdf(chaining_key, input_key_material, num_outputs, hmac_hash_fn):

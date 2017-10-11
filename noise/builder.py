@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 from typing import Union, List
 
 from cryptography.exceptions import InvalidTag
@@ -9,10 +9,10 @@ from .noise_protocol import NoiseProtocol
 
 
 class Keypair(Enum):
-    STATIC = auto()
-    REMOTE_STATIC = auto()
-    EPHEMERAL = auto()
-    REMOTE_EPHEMERAL = auto()
+    STATIC = 1
+    REMOTE_STATIC = 2
+    EPHEMERAL = 3
+    REMOTE_EPHEMERAL = 4
 
 
 _keypairs = {Keypair.STATIC: 's', Keypair.REMOTE_STATIC: 'rs',

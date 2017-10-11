@@ -10,7 +10,7 @@ This package shall not be used (yet) for production purposes. There was little t
 Use common sense while using - until this package becomes stable.
 
 ## Installation and prerequisites
-For now, only Python 3.6 is supported.
+For now, only Python 3.5+ is supported.
 
 Install via pip:
 ```
@@ -82,11 +82,9 @@ pytest
 ### Todo-list for the project:
 
 - [ ] fallback patterns support
-- [ ] documentation on Read the Docs and more extensive readme
 - [ ] scripts for keypair generation (+ console entry points)
 - [ ] "echo" (noise-c like) example
 - [ ] extensive logging
-- [ ] bringing back Python 3.5 support and supporting Python 3.7 (dependent on Cryptography package updates)
 - [ ] move away from custom ed448 implementation
 - [ ] implement countermeasures for side-channel attacks
 - [ ] **get peer review of the code**
