@@ -102,7 +102,7 @@ class NoiseProtocol(object):
                 self.cipher_state_decrypt = None
             else:
                 self.cipher_state_encrypt = None
-        self.handshake_hash = self.symmetric_state.h
+        self.handshake_hash = self.symmetric_state.get_handshake_hash()
         del self.handshake_state
         del self.symmetric_state
         del self.cipher_state_handshake

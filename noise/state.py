@@ -33,6 +33,9 @@ class CipherState(object):
         """
         return not isinstance(self.k, Empty)
 
+    def set_nonce(self, nonce):
+        self.n = nonce
+
     def encrypt_with_ad(self, ad: bytes, plaintext: bytes) -> bytes:
         """
         If k is non-empty returns ENCRYPT(k, n++, ad, plaintext). Otherwise returns plaintext.
@@ -147,6 +150,9 @@ class SymmetricState(object):
             temp_k = temp_k[:32]
         # Calls InitializeKey(temp_k).
         self.cipher_state.initialize_key(temp_k)
+
+    def get_handshake_hash(self):
+        return self.h
 
     def encrypt_and_hash(self, plaintext: bytes) -> bytes:
         """

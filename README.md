@@ -4,6 +4,7 @@ noiseprotocol
 [![PyPI](https://img.shields.io/pypi/v/noiseprotocol.svg)](https://pypi.python.org/pypi/noiseprotocol)
 
 This repository contains source code of **noiseprotocol** - a Python 3 implementation of [Noise Protocol Framework](http://www.noiseprotocol.org/).
+Compatible with revisions 32 and 33.
 
 ### Warning
 This package shall not be used (yet) for production purposes. There was little to none peer review done so far. 
