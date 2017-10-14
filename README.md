@@ -2,6 +2,7 @@ noiseprotocol
 =============
 [![Build Status](https://travis-ci.org/plizonczyk/noiseprotocol.svg?branch=master)](https://travis-ci.org/plizonczyk/noiseprotocol)
 [![PyPI](https://img.shields.io/pypi/v/noiseprotocol.svg)](https://pypi.python.org/pypi/noiseprotocol)
+[![Documentation Status](https://readthedocs.org/projects/noiseprotocol/badge/)](http://noiseprotocol.readthedocs.io/)
 
 This repository contains source code of **noiseprotocol** - a Python 3 implementation of [Noise Protocol Framework](http://www.noiseprotocol.org/).
 Compatible with revisions 32 and 33.
@@ -9,6 +10,10 @@ Compatible with revisions 32 and 33.
 ### Warning
 This package shall not be used (yet) for production purposes. There was little to none peer review done so far. 
 Use common sense while using - until this package becomes stable.
+
+## Documentation
+Available on [Read the Docs](https://noiseprotocol.readthedocs.io). For now it provides basic documentation on 
+HandshakeState, CipherState and SymmetricState. Refer to the rest of the README below for more information.
 
 ## Installation and prerequisites
 For now, only Python 3.5+ is supported.

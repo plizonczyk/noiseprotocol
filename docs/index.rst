@@ -14,14 +14,9 @@ Welcome to noiseprotocol's documentation!
 Documentation for the Code
 **************************
 
-.. automodule:: noise.builder
-   :members:
-
-.. automodule:: noise.functions
-   :members:
-
 .. automodule:: noise.state
    :members:
+
 
 Indices and tables
 ==================

@@ -6,7 +6,7 @@ from .constants import Empty, TOKEN_E, TOKEN_S, TOKEN_EE, TOKEN_ES, TOKEN_SE, TO
 
 class CipherState(object):
     """
-    Implemented as per Noise Protocol specification (rev 32) - paragraph 5.1.
+    Implemented as per Noise Protocol specification - paragraph 5.1.
 
     The initialize_key() function takes additional required argument - noise_protocol.
 
@@ -20,6 +20,7 @@ class CipherState(object):
 
     def initialize_key(self, key):
         """
+
         :param key: Key to set within CipherState
         """
         self.k = key
@@ -29,6 +30,7 @@ class CipherState(object):
 
     def has_key(self):
         """
+
         :return: True if self.k is not an instance of Empty
         """
         return not isinstance(self.k, Empty)
@@ -39,6 +41,7 @@ class CipherState(object):
     def encrypt_with_ad(self, ad: bytes, plaintext: bytes) -> bytes:
         """
         If k is non-empty returns ENCRYPT(k, n++, ad, plaintext). Otherwise returns plaintext.
+
         :param ad: bytes sequence
         :param plaintext: bytes sequence
         :return: ciphertext bytes sequence
@@ -57,6 +60,7 @@ class CipherState(object):
         """
         If k is non-empty returns DECRYPT(k, n++, ad, ciphertext). Otherwise returns ciphertext. If an authentication
         failure occurs in DECRYPT() then n is not incremented and an error is signaled to the caller.
+
         :param ad: bytes sequence
         :param ciphertext: bytes sequence
         :return: plaintext bytes sequence
@@ -78,7 +82,7 @@ class CipherState(object):
 
 class SymmetricState(object):
     """
-    Implemented as per Noise Protocol specification (rev 32) - paragraph 5.2.
+    Implemented as per Noise Protocol specification - paragraph 5.2.
 
     The initialize_symmetric function takes different required argument - noise_protocol, which contains protocol_name.
     """
@@ -95,6 +99,7 @@ class SymmetricState(object):
         protocol name and crypto functions
 
         Comments below are mostly copied from specification.
+
         :param noise_protocol: a valid NoiseProtocol instance
         :return: initialised SymmetricState instance
         """
@@ -121,6 +126,7 @@ class SymmetricState(object):
 
     def mix_key(self, input_key_material: bytes):
         """
+
         :param input_key_material: 
         :return: 
         """
@@ -136,6 +142,7 @@ class SymmetricState(object):
     def mix_hash(self, data: bytes):
         """
         Sets h = HASH(h + data).
+
         :param data: bytes sequence
         """
         self.h = self.noise_protocol.hash_fn.hash(self.h + data)
@@ -158,6 +165,7 @@ class SymmetricState(object):
         """
         Sets ciphertext = EncryptWithAd(h, plaintext), calls MixHash(ciphertext), and returns ciphertext. Note that if
         k is empty, the EncryptWithAd() call will set ciphertext equal to plaintext.
+
         :param plaintext: bytes sequence
         :return: ciphertext bytes sequence
         """
@@ -169,6 +177,7 @@ class SymmetricState(object):
         """
         Sets plaintext = DecryptWithAd(h, ciphertext), calls MixHash(ciphertext), and returns plaintext. Note that if
         k is empty, the DecryptWithAd() call will set plaintext equal to ciphertext.
+
         :param ciphertext: bytes sequence
         :return: plaintext bytes sequence
         """
@@ -179,6 +188,7 @@ class SymmetricState(object):
     def split(self):
         """
         Returns a pair of CipherState objects for encrypting/decrypting transport messages.
+
         :return: tuple (CipherState, CipherState)
         """
         # Sets temp_k1, temp_k2 = HKDF(ck, b'', 2).
@@ -209,7 +219,7 @@ class SymmetricState(object):
 
 class HandshakeState(object):
     """
-    Implemented as per Noise Protocol specification (rev 32) - paragraph 5.3.
+    Implemented as per Noise Protocol specification - paragraph 5.3.
 
     The initialize() function takes different required argument - noise_protocol, which contains handshake_pattern.
     """
@@ -235,7 +245,7 @@ class HandshakeState(object):
         :param noise_protocol: a valid NoiseProtocol instance
         :param initiator: boolean indicating the initiator or responder role
         :param prologue: byte sequence which may be zero-length, or which may contain context information that both
-        parties want to confirm is identical
+            parties want to confirm is identical
         :param s: local static key pair
         :param e: local ephemeral key pair
         :param rs: remote party’s static public key
@@ -282,6 +292,7 @@ class HandshakeState(object):
     def write_message(self, payload: Union[bytes, bytearray], message_buffer: bytearray):
         """
         Comments below are mostly copied from specification.
+
         :param payload: byte sequence which may be zero-length
         :param message_buffer: buffer-like object
         :return: None or result of SymmetricState.split() - tuple (CipherState, CipherState)
@@ -340,6 +351,7 @@ class HandshakeState(object):
     def read_message(self, message: Union[bytes, bytearray], payload_buffer: bytearray):
         """
         Comments below are mostly copied from specification.
+
         :param message: byte sequence containing a Noise handshake message
         :param payload_buffer: buffer-like object
         :return: None or result of SymmetricState.split() - tuple (CipherState, CipherState)
