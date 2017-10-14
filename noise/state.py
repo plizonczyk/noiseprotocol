@@ -9,11 +9,14 @@ class CipherState(object):
     Implemented as per Noise Protocol specification (rev 32) - paragraph 5.1.
 
     The initialize_key() function takes additional required argument - noise_protocol.
+
+    This class holds an instance of Cipher wrapper. It manages initialisation of underlying cipher function
+    with appropriate key in initialize_key() and rekey() methods.
     """
     def __init__(self, noise_protocol):
         self.k = Empty()
         self.n = None
-        self.noise_protocol = noise_protocol
+        self.cipher = noise_protocol.cipher_fn()
 
     def initialize_key(self, key):
         """
@@ -21,6 +24,8 @@ class CipherState(object):
         """
         self.k = key
         self.n = 0
+        if self.has_key():
+            self.cipher.initialize(key)
 
     def has_key(self):
         """
@@ -41,7 +46,7 @@ class CipherState(object):
         if not self.has_key():
             return plaintext
 
-        ciphertext = self.noise_protocol.cipher_fn.encrypt(self.k, self.n, ad, plaintext)
+        ciphertext = self.cipher.encrypt(self.k, self.n, ad, plaintext)
         self.n = self.n + 1
         return ciphertext
 
@@ -59,12 +64,13 @@ class CipherState(object):
         if not self.has_key():
             return ciphertext
 
-        plaintext = self.noise_protocol.cipher_fn.decrypt(self.k, self.n, ad, ciphertext)
+        plaintext = self.cipher.decrypt(self.k, self.n, ad, ciphertext)
         self.n = self.n + 1
         return plaintext
 
     def rekey(self):
-        self.k = self.noise_protocol.cipher_fn.rekey(self.k)
+        self.k = self.cipher.rekey(self.k)
+        self.cipher.initialize(self.k)
 
 
 class SymmetricState(object):

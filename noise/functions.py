@@ -65,34 +65,31 @@ class Cipher(object):
             self.rekey = self._default_rekey
         else:
             raise NotImplementedError('Cipher method: {}'.format(method))
+        self.cipher = None
 
     def _aesgcm_encrypt(self, k, n, ad, plaintext):
-        # Might be expensive to initialise AESGCM with the same key every time. The key should be (as per spec) kept in
-        # CipherState, but we may as well hold an initialised AESGCM and manage reinitialisation on CipherState.rekey
-        cipher = self._cipher(k)
-        return cipher.encrypt(nonce=self._aesgcm_nonce(n), data=plaintext, associated_data=ad)
+        return self.cipher.encrypt(nonce=self._aesgcm_nonce(n), data=plaintext, associated_data=ad)
 
     def _aesgcm_decrypt(self, k, n, ad, ciphertext):
-        cipher = self._cipher(k)
-        return cipher.decrypt(nonce=self._aesgcm_nonce(n), data=ciphertext, associated_data=ad)
+        return self.cipher.decrypt(nonce=self._aesgcm_nonce(n), data=ciphertext, associated_data=ad)
 
     def _aesgcm_nonce(self, n):
         return b'\x00\x00\x00\x00' + n.to_bytes(length=8, byteorder='big')
 
     def _chacha20_encrypt(self, k, n, ad, plaintext):
-        # Same comment as with AESGCM
-        cipher = self._cipher(k)
-        return cipher.encrypt(nonce=self._chacha20_nonce(n), data=plaintext, associated_data=ad)
+        return self.cipher.encrypt(nonce=self._chacha20_nonce(n), data=plaintext, associated_data=ad)
 
     def _chacha20_decrypt(self, k, n, ad, ciphertext):
-        cipher = self._cipher(k)
-        return cipher.decrypt(nonce=self._chacha20_nonce(n), data=ciphertext, associated_data=ad)
+        return self.cipher.decrypt(nonce=self._chacha20_nonce(n), data=ciphertext, associated_data=ad)
 
     def _chacha20_nonce(self, n):
         return b'\x00\x00\x00\x00' + n.to_bytes(length=8, byteorder='little')
 
     def _default_rekey(self, k):
         return self.encrypt(k, MAX_NONCE, b'', b'\x00' * 32)[:32]
+
+    def initialize(self, key):
+        self.cipher = self._cipher(key)
 
 
 class Hash(object):
@@ -209,8 +206,8 @@ dh_map = {
 }
 
 cipher_map = {
-    'AESGCM': Cipher('AESGCM'),
-    'ChaChaPoly': Cipher('ChaCha20')
+    'AESGCM': partial(Cipher, 'AESGCM'),
+    'ChaChaPoly': partial(Cipher, 'ChaCha20')
 }
 
 hash_map = {
