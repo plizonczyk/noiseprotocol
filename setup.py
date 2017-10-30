@@ -13,7 +13,7 @@ except (IOError, ImportError):
 
 setup(
     name='noiseprotocol',
-    version='0.1.1',
+    version='0.2.0',
     description='Implementation of Noise Protocol Framework',
     long_description=long_description,
     url='https://github.com/plizonczyk/noiseprotocol',
@@ -26,12 +26,12 @@ setup(
         'Topic :: Security :: Cryptography',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        # 'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         # 'Programming Language :: Python :: 3.7',
     ],
     keywords='cryptography noiseprotocol noise security',
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
-    install_requires=['cryptography==2.0.3'],
-    python_requires='~=3.6',
+    install_requires=['cryptography==2.1.1'],
+    python_requires='~=3.5,~=3.6',
 )
