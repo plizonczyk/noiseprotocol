@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from noise.builder import NoiseBuilder, Keypair
+from noise.connection import NoiseConnection, Keypair
 
 logger = logging.getLogger(__name__)
 
@@ -56,20 +56,20 @@ class TestVectors(object):
     def vector(self, request):
         yield request.param
 
-    def _set_keypairs(self, vector, builder):
-        role = 'init' if builder.noise_protocol.initiator else 'resp'
+    def _set_keypairs(self, vector, connection):
+        role = 'init' if connection.noise_protocol.initiator else 'resp'
         setters = [
-            (builder.set_keypair_from_private_bytes, Keypair.STATIC, role + '_static'),
-            (builder.set_keypair_from_private_bytes, Keypair.EPHEMERAL, role + '_ephemeral'),
-            (builder.set_keypair_from_public_bytes, Keypair.REMOTE_STATIC, role + '_remote_static')
+            (connection.set_keypair_from_private_bytes, Keypair.STATIC, role + '_static'),
+            (connection.set_keypair_from_private_bytes, Keypair.EPHEMERAL, role + '_ephemeral'),
+            (connection.set_keypair_from_public_bytes, Keypair.REMOTE_STATIC, role + '_remote_static')
         ]
         for fn, keypair, name in setters:
             if name in vector:
                 fn(keypair, vector[name])
 
     def test_vector(self, vector):
-        initiator = NoiseBuilder.from_name(vector['protocol_name'])
-        responder = NoiseBuilder.from_name(vector['protocol_name'])
+        initiator = NoiseConnection.from_name(vector['protocol_name'])
+        responder = NoiseConnection.from_name(vector['protocol_name'])
         if 'init_psks' in vector and 'resp_psks' in vector:
             initiator.set_psks(psks=vector['init_psks'])
             responder.set_psks(psks=vector['resp_psks'])

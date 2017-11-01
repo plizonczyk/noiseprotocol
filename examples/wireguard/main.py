@@ -6,7 +6,7 @@ import struct
 
 from scapy.layers.inet import IP, ICMP
 
-from noise.builder import NoiseBuilder, Keypair
+from noise.connection import NoiseConnection, Keypair
 
 
 address = ('demo.wireguard.com', 12913)
@@ -16,7 +16,7 @@ their_public = base64.b64decode('qRCwZSKInrMAq5sepfCdaCsRJaoLe5jhtzfiw7CjbwM=')
 preshared = base64.b64decode('FpCyhws9cxwWoV4xELtfJvjJN+zQVRPISllRWgeopVE=')
 prologue = b'WireGuard v1 zx2c4 Jason@zx2c4.com'
 
-noise = NoiseBuilder.from_name(b'Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s')
+noise = NoiseConnection.from_name(b'Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s')
 noise.set_as_initiator()
 noise.set_keypair_from_private_bytes(Keypair.STATIC, our_private)
 noise.set_keypair_from_public_bytes(Keypair.REMOTE_STATIC, their_public)

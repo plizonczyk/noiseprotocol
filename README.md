@@ -27,20 +27,20 @@ pip install noiseprotocol
 ## Usage
 
 #### Basic usage
-NoiseBuilder class provides highest level of abstraction for the package. You can access full functionality of the package
-through this class' interfaces. An example for setting up NoiseBuilder could look like this:
+NoiseConnection class provides highest level of abstraction for the package. You can access full functionality of the package
+through this class' interfaces. An example for setting up NoiseConnection could look like this:
 
 ```python
 import socket
 
-from noise.builder import NoiseBuilder
+from noise.connection import NoiseConnection
 
 sock = socket.socket()
 sock.connect(('localhost', 2000))
 
-# Create instance of NoiseBuilder, set up to use NN handshake pattern, Curve25519 for 
+# Create instance of NoiseConnection, set up to use NN handshake pattern, Curve25519 for
 # elliptic curve keypair, ChaCha20Poly1305 as cipher function and SHA256 for hashing.  
-proto = NoiseBuilder.from_name(b'Noise_NN_25519_ChaChaPoly_SHA256')
+proto = NoiseConnection.from_name(b'Noise_NN_25519_ChaChaPoly_SHA256')
 
 # Set role in this connection as initiator
 proto.set_as_initiator()
@@ -60,7 +60,7 @@ payload = proto.read_message(received)
 
 # As of now, the handshake should be finished (as we are using NN pattern). 
 # Any further calls to write_message or read_message would raise NoiseHandshakeError exception.
-# We can use encrypt/decrypt methods of NoiseBuilder now for encryption and decryption of messages.
+# We can use encrypt/decrypt methods of NoiseConnection now for encryption and decryption of messages.
 encrypted_message = proto.encrypt(b'This is an example payload')
 sock.sendall(encrypted_message)
 
@@ -75,7 +75,7 @@ The example above covers the connection from the initiator's ("client") point of
 import socket
 from itertools import cycle
 
-from noise.builder import NoiseBuilder
+from noise.connection import NoiseConnection
 
 if __name__ == '__main__':
     s = socket.socket()
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     conn, addr = s.accept()
     print('Accepted connection from', addr)
 
-    noise = NoiseBuilder.from_name(b'Noise_NN_25519_ChaChaPoly_SHA256')
+    noise = NoiseConnection.from_name(b'Noise_NN_25519_ChaChaPoly_SHA256')
     noise.set_as_responder()
     noise.start_handshake()
 
@@ -134,6 +134,7 @@ pytest
 
 ### Todo-list for the project:
 
+- [ ] custom crypto backends
 - [ ] fallback patterns support
 - [ ] scripts for keypair generation (+ console entry points)
 - [ ] "echo" (noise-c like) example

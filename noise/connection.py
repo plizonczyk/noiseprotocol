@@ -19,7 +19,7 @@ _keypairs = {Keypair.STATIC: 's', Keypair.REMOTE_STATIC: 'rs',
              Keypair.EPHEMERAL: 'e', Keypair.REMOTE_EPHEMERAL: 're'}
 
 
-class NoiseBuilder(object):
+class NoiseConnection(object):
     def __init__(self):
         self.noise_protocol = None
         self.protocol_name = None
@@ -97,11 +97,11 @@ class NoiseBuilder(object):
 
     def write_message(self, payload: bytes=b'') -> bytearray:
         if not self._handshake_started:
-            raise NoiseHandshakeError('Call NoiseBuilder.start_handshake first')
+            raise NoiseHandshakeError('Call NoiseConnection.start_handshake first')
         if self._next_fn != self.write_message:
-            raise NoiseHandshakeError('NoiseBuilder.read_message has to be called now')
+            raise NoiseHandshakeError('NoiseConnection.read_message has to be called now')
         if self.handshake_finished:
-            raise NoiseHandshakeError('Handshake finished. NoiseBuilder.encrypt should be used now')
+            raise NoiseHandshakeError('Handshake finished. NoiseConnection.encrypt should be used now')
         self._next_fn = self.read_message
 
         buffer = bytearray()
@@ -112,11 +112,11 @@ class NoiseBuilder(object):
 
     def read_message(self, data: bytes) -> bytearray:
         if not self._handshake_started:
-            raise NoiseHandshakeError('Call NoiseBuilder.start_handshake first')
+            raise NoiseHandshakeError('Call NoiseConnection.start_handshake first')
         if self._next_fn != self.read_message:
-            raise NoiseHandshakeError('NoiseBuilder.write_message has to be called now')
+            raise NoiseHandshakeError('NoiseConnection.write_message has to be called now')
         if self.handshake_finished:
-            raise NoiseHandshakeError('Handshake finished. NoiseBuilder.decrypt should be used now')
+            raise NoiseHandshakeError('Handshake finished. NoiseConnection.decrypt should be used now')
         self._next_fn = self.write_message
 
         buffer = bytearray()
