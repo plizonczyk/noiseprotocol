@@ -121,8 +121,8 @@ class NoiseProtocol(object):
                                     'given {}'.format(self.pattern.psk_count, len(self.psks)))
 
         if self.initiator is None:
-            raise NoiseValidationError('You need to set role with NoiseBuilder.set_as_initiator '
-                                       'or NoiseBuilder.set_as_responder')
+            raise NoiseValidationError('You need to set role with NoiseConnection.set_as_initiator '
+                                       'or NoiseConnection.set_as_responder')
 
         for keypair in self.pattern.get_required_keypairs(self.initiator):
             if self.keypairs[keypair] is None:
