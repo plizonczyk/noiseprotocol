@@ -1,22 +1,55 @@
 language: python
-matrix:
-  fast_finish: true
-  allow_failures:
-    - os: osx  # Travis is SO slow with OS X.
-os:
-  - linux
-  - osx
-notifications:
-  email: false
+  
 python:
   - "3.5"
   - "3.6"
   - "3.5-dev" # 3.5 development branch
   - "3.6-dev" # 3.6 development branch
-#  - "3.7-dev" # 3.7 development branch
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - os: osx  # Travis is SO slow with OS X.
+  include:
+    - os: osx
+      language: generic
+      env: PYTHON=3.5.4
+    - os: osx
+      language: generic
+      env: PYTHON=3.6.3
+      
+notifications:
+  email: false
+
+# From https://pythonhosted.org/CodeChat/.travis.yml.html
+before_install: |
+  if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+    brew update
+    # Per the `pyenv homebrew recommendations <https://github.com/yyuu/pyenv/wiki#suggested-build-environment>`_.
+    brew install openssl readline
+    # See https://docs.travis-ci.com/user/osx-ci-environment/#A-note-on-upgrading-packages.
+    # I didn't do this above because it works and I'm lazy.
+    brew outdated pyenv || brew upgrade pyenv
+    # virtualenv doesn't work without pyenv knowledge. venv in Python 3.3
+    # doesn't provide Pip by default. So, use `pyenv-virtualenv <https://github.com/yyuu/pyenv-virtualenv/blob/master/README.md>`_.
+    brew install pyenv-virtualenv
+    pyenv install $PYTHON
+    # I would expect something like ``pyenv init; pyenv local $PYTHON`` or
+    # ``pyenv shell $PYTHON`` would work, but ``pyenv init`` doesn't seem to
+    # modify the Bash environment. ??? So, I hand-set the variables instead.
+    export PYENV_VERSION=$PYTHON
+    export PATH="/Users/travis/.pyenv/shims:${PATH}"
+    pyenv-virtualenv venv
+    source venv/bin/activate
+    # A manual check that the correct version of Python is running.
+    python --version
+  fi
+
 # command to install dependencies
 install:
   - "pip install -r requirements.txt"
   - "pip install pytest-travis-fold"
+  
 # command to run tests
-script: pytest
+script:
+  - "python -m pytest"
