@@ -29,6 +29,9 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         # 'Programming Language :: Python :: 3.7',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux'
     ],
     keywords='cryptography noiseprotocol noise security',
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
