@@ -1,6 +1,15 @@
 Changelog
 =========
 
+
+.. _v0-2-1:
+
+0.2.1 - 2017-11-04
+~~~~~~~~~~~~~~~~~~
+
+* Cryptography updated to 2.1.3 due to OpenSSL vulnerability fix
+
+
 .. _v0-2-0:
 
 0.2.0 - 2017-11-01
