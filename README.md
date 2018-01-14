@@ -119,16 +119,16 @@ In *examples* directory, there is an example of interoperation of this package w
 
 ----
 ## Bug reports
-This software was tested only on Linux. It may or may not work on Windows, explicit support for this system will be added in future.
+This software was tested only on Linux. It may or may not work on Windows, explicit support for this system may be added in future.
 
 Please file any bug reports in project's [issue tracker](https://github.com/plizonczyk/noiseprotocol/issues). 
 
 ## Development & contributing
-The only additional package that may be useful during development is pytest - for unit testing.
+Additional packages that may be useful during development are contained in dev_requirements.txt.
 Installation:
 
 ```
-pip install pytest
+pip install -r dev_requirements.txt
 ```
 
 Running tests (from root directory):
