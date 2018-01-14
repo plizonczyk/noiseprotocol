@@ -35,6 +35,6 @@ setup(
     ],
     keywords='cryptography noiseprotocol noise security',
     packages=find_packages(exclude=['contrib', 'docs', 'tests', 'examples']),
-    install_requires=['cryptography==2.1.3'],
+    install_requires=['cryptography==2.1.4'],
     python_requires='~=3.5,~=3.6',
 )
