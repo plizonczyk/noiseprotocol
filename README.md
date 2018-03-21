@@ -20,8 +20,6 @@ HandshakeState, CipherState and SymmetricState. Refer to the rest of the README 
 For now, only Python 3.5+ is supported.
 The author provides support for Linux systems only. Although the CI systems perform testing on **Windows and OS X**, consider their support even **more experimental** than the whole package, though OS X usage should not differ from Linux.
 
-*Unless there is a dedicated contributor for Windows, the author won't provide any support for issues with using the noiseprotocol package on them. Python development on Windows is too painful, even considering my deep love for the OS.*
-
 Install via pip:
 ```
 pip install noiseprotocol 

@@ -1,6 +1,14 @@
 Changelog
 =========
 
+.. _v0-2-2:
+
+0.2.2 - 2018-03-21
+~~~~~~~~~~~~~~~~~~
+
+* Loosened restrictions on Python and Cryptography in setup.py - contributed by @warner
+* Cryptography version required bumped to 2.1.4
+
 
 .. _v0-2-1:
 
