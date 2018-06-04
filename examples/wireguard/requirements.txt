@@ -1,2 +1,2 @@
 noiseprotocol
-scapy-python3
+scapy>=2.4.0
