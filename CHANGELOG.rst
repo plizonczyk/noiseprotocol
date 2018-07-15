@@ -1,6 +1,14 @@
 Changelog
 =========
 
+.. _v0-3-0:
+
+0.3.0 - TODO
+~~~~~~~~~~~~~~~~~~
+
+* Added support for non-default crypto backends
+* Loosened restriction on Cryptography version in requirements.txt and bumped version to 2.2.2
+
 .. _v0-2-2:
 
 0.2.2 - 2018-03-21
