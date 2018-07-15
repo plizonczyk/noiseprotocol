@@ -1,3 +1,4 @@
+from noise.backends.default import noise_backend
 from noise.noise_protocol import NoiseProtocol
 from noise.state import CipherState, SymmetricState
 
@@ -8,12 +9,14 @@ class TestRevision33Compatibility(object):
             fn = None
 
         noise_name = b"Noise_NN_25519_AESGCM_SHA3/256"
+
+        modified_backend = noise_backend
+        modified_backend.hashes['SHA3/256'] = FakeSHA3_256  # Add callable to hash functions mapping
         modified_class = NoiseProtocol
-        modified_class.methods['hash']['SHA3/256'] = FakeSHA3_256  # Add callable to hash functions mapping
-        modified_class(noise_name)
+        modified_class(noise_name, modified_backend)
 
     def test_cipher_state_set_nonce(self):
-        noise_protocol = NoiseProtocol(b"Noise_NN_25519_AESGCM_SHA256")
+        noise_protocol = NoiseProtocol(b"Noise_NN_25519_AESGCM_SHA256", backend=noise_backend)
         cipher_state = CipherState(noise_protocol)
         cipher_state.initialize_key(b'\x00'*32)
         assert cipher_state.n == 0
