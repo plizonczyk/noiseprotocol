@@ -27,12 +27,15 @@ class NoiseProtocol(object):
         self.psks = None
         self.is_psk_handshake = any([modifier.startswith('psk') for modifier in self.pattern_modifiers])
 
+        # Preinitialized
         self.dh_fn = mappings['dh']()
         self.hash_fn = mappings['hash']()
-        self.cipher_fn = mappings['cipher']
-        self.keypair_fn = mappings['keypair']
         self.hmac = partial(backend.hmac, algorithm=self.hash_fn.fn)
         self.hkdf = partial(backend.hkdf, hmac_hash_fn=self.hmac)
+
+        # Initialized where needed
+        self.cipher_class = mappings['cipher']
+        self.keypair_class = mappings['keypair']
 
         self.prologue = None
         self.initiator = None
@@ -60,7 +63,7 @@ class NoiseProtocol(object):
         del self.initiator
         del self.dh_fn
         del self.hash_fn
-        del self.keypair_fn
+        del self.keypair_class
 
     def validate(self):
         if self.is_psk_handshake:
