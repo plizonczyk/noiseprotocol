@@ -7,7 +7,8 @@ Changelog
 ~~~~~~~~~~~~~~~~~~
 
 * Added support for non-default crypto backends
-* Loosened restriction on Cryptography version in requirements.txt and bumped version to 2.2.2
+* Loosened restriction on Cryptography version in requirements.txt and bumped version to 2.5
+* Moved away from custom x448 implementation in favor of OpenSSL implementation (for default backend)   
 
 .. _v0-2-2:
 
