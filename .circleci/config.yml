@@ -1,0 +1,22 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/noiseprotocol
+    docker:
+      - image: circleci/python:3.6.4
+    steps:
+      - checkout
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.6/site-packages
+      - run:
+          command: |
+            sudo pip install -r requirements.txt
+            sudo pip install -r dev_requirements.txt
+      - run:
+          command: |
+            mkdir test-reports
+            pytest --junitxml=test-reports/junit.xml
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
