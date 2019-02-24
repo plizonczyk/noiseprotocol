@@ -162,7 +162,7 @@ class KeyPair25519(_KeyPair):
     def from_private_bytes(cls, private_bytes):
         if len(private_bytes) != 32:
             raise NoiseValueError('Invalid length of private_bytes! Should be 32')
-        private = x25519.X25519PrivateKey._from_private_bytes(private_bytes)
+        private = x25519.X25519PrivateKey.from_private_bytes(private_bytes)
         public = private.public_key()
         return cls(private=private, public=public, public_bytes=public.public_bytes())
 
