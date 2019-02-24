@@ -10,10 +10,6 @@ Compatible with revisions 32 and 33.
 
 Master branch contains latest version released. Trunk branch is an active development branch.
 
-### Warning
-This package shall not be used (yet) for production purposes. There was little to none peer review done so far. 
-Use common sense while using - until this package becomes stable.
-
 ## Documentation
 Available on [Read the Docs](https://noiseprotocol.readthedocs.io). For now it provides basic documentation on 
 HandshakeState, CipherState and SymmetricState. Refer to the rest of the README below for more information.
@@ -138,12 +134,12 @@ pytest
 
 ### Todo-list for the project:
 
-- [ ] custom crypto backends
+- [x] add non-default crypto algorithms support, as requested
 - [ ] fallback patterns support
 - [ ] scripts for keypair generation (+ console entry points)
 - [ ] "echo" (noise-c like) example
 - [ ] extensive logging
-- [ ] move away from custom ed448 implementation
+- [x] move away from custom ed448 implementation
 - [ ] implement countermeasures for side-channel attacks
 - [ ] **get peer review of the code**
 

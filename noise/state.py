@@ -16,7 +16,7 @@ class CipherState(object):
     def __init__(self, noise_protocol):
         self.k = Empty()
         self.n = None
-        self.cipher = noise_protocol.cipher_fn()
+        self.cipher = noise_protocol.cipher_class()
 
     def initialize_key(self, key):
         """
@@ -363,7 +363,7 @@ class HandshakeState(object):
         for token in message_pattern:
             if token == TOKEN_E:
                 # Sets re to the next DHLEN bytes from the message. Calls MixHash(re.public_key).
-                self.re = self.noise_protocol.keypair_fn.from_public_bytes(bytes(message[:dhlen]))
+                self.re = self.noise_protocol.keypair_class.from_public_bytes(bytes(message[:dhlen]))
                 message = message[dhlen:]
                 self.symmetric_state.mix_hash(self.re.public_bytes)
                 if self.noise_protocol.is_psk_handshake:
@@ -378,7 +378,9 @@ class HandshakeState(object):
                 else:
                     temp = bytes(message[:dhlen])
                     message = message[dhlen:]
-                self.rs = self.noise_protocol.keypair_fn.from_public_bytes(self.symmetric_state.decrypt_and_hash(temp))
+                self.rs = self.noise_protocol.keypair_class.from_public_bytes(
+                    self.symmetric_state.decrypt_and_hash(temp)
+                )
 
             elif token == TOKEN_EE:
                 # Calls MixKey(DH(e, re)).
