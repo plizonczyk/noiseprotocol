@@ -3,7 +3,7 @@ Changelog
 
 .. _v0-3-0:
 
-0.3.0 - TODO
+0.3.0 - 2019-02-24 
 ~~~~~~~~~~~~~~~~~~
 
 * Added support for non-default crypto backends
