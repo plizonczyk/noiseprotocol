@@ -1,1 +1,1 @@
-git+git://github.com/pyca/cryptography@master
+cryptography>=2.5
