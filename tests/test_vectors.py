@@ -56,18 +56,66 @@ class TestVectors(object):
     def vector(self, request):
         yield request.param
 
-    def _set_keypairs(self, vector, connection):
+    def _set_keypairs(self, vector, connection, ephemeral=True):
         role = 'init' if connection.noise_protocol.initiator else 'resp'
         setters = [
             (connection.set_keypair_from_private_bytes, Keypair.STATIC, role + '_static'),
-            (connection.set_keypair_from_private_bytes, Keypair.EPHEMERAL, role + '_ephemeral'),
             (connection.set_keypair_from_public_bytes, Keypair.REMOTE_STATIC, role + '_remote_static')
         ]
+        if ephemeral:
+            setters[1:1] = [
+                (connection.set_keypair_from_private_bytes, Keypair.EPHEMERAL, role + '_ephemeral'),
+            ]
         for fn, keypair, name in setters:
             if name in vector:
                 fn(keypair, vector[name])
 
+    def e2etest(self, vector):
+        initiator = NoiseConnection.from_name(vector['protocol_name'])
+        responder = NoiseConnection.from_name(vector['protocol_name'])
+        if 'init_psks' in vector and 'resp_psks' in vector:
+            initiator.set_psks(psks=vector['init_psks'])
+            responder.set_psks(psks=vector['resp_psks'])
+
+        initiator.set_prologue(vector['init_prologue'])
+        initiator.set_as_initiator()
+        self._set_keypairs(vector, initiator, ephemeral=False)
+
+        responder.set_prologue(vector['resp_prologue'])
+        responder.set_as_responder()
+        self._set_keypairs(vector, responder, ephemeral=False)
+
+        initiator.start_handshake()
+        responder.start_handshake()
+
+        # set sender and received
+        s, r = initiator, responder
+
+        # loop until both sides think the handshake has finished
+        while not initiator.handshake_finished and not responder.handshake_finished:
+            # exchange a message
+            r.read_message(s.write_message())
+
+            # Swap roles
+            s, r = r, s
+
+        pt = b'this is a test message'
+
+        # make sure that the initiator can send a message
+        ct = initiator.encrypt(pt)
+
+        # and is decrypted by the responder
+        assert pt == responder.decrypt(ct)
+
+        # make sure that the responder can send a message
+        ct = responder.encrypt(pt)
+
+        # and is decrypted by the initiator
+        assert pt == initiator.decrypt(ct)
+
     def test_vector(self, vector):
+        if b'_XK_448_' in vector['protocol_name']:
+            self.e2etest(vector)
         initiator = NoiseConnection.from_name(vector['protocol_name'])
         responder = NoiseConnection.from_name(vector['protocol_name'])
         if 'init_psks' in vector and 'resp_psks' in vector:
