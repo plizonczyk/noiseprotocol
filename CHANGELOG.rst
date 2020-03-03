@@ -8,6 +8,7 @@ Changelog
 
 * Fixed deprecation warnings and/or breakage for 448/25519 due to Cryptography changes - contributed by @warner
 * Bumped required Cryptography to 2.8
+* CI/CD testing added for Python 3.8
       
 .. _v0-3-0:
 
