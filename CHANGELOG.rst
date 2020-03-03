@@ -1,6 +1,15 @@
 Changelog
 =========
 
+.. _v0-3-1:
+
+0.3.1 - 2020-03-03
+~~~~~~~~~~~~~~~~~~
+
+* Fixed deprecation warnings and/or breakage for 448/25519 due to Cryptography changes - contributed by @warner
+* Bumped required Cryptography to 2.8
+* CI/CD testing added for Python 3.8
+      
 .. _v0-3-0:
 
 0.3.0 - 2019-02-24 
