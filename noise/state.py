@@ -304,6 +304,8 @@ class HandshakeState(object):
             if token == TOKEN_E:
                 # Sets e = GENERATE_KEYPAIR(). Appends e.public_key to the buffer. Calls MixHash(e.public_key)
                 self.e = self.noise_protocol.dh_fn.generate_keypair() if isinstance(self.e, Empty) else self.e
+                self.noise_protocol.keypairs['e'] = self.e
+
                 message_buffer += self.e.public_bytes
                 self.symmetric_state.mix_hash(self.e.public_bytes)
                 if self.noise_protocol.is_psk_handshake:
@@ -364,6 +366,8 @@ class HandshakeState(object):
             if token == TOKEN_E:
                 # Sets re to the next DHLEN bytes from the message. Calls MixHash(re.public_key).
                 self.re = self.noise_protocol.keypair_class.from_public_bytes(bytes(message[:dhlen]))
+                self.noise_protocol.keypairs['re'] = self.re
+
                 message = message[dhlen:]
                 self.symmetric_state.mix_hash(self.re.public_bytes)
                 if self.noise_protocol.is_psk_handshake:
@@ -381,6 +385,7 @@ class HandshakeState(object):
                 self.rs = self.noise_protocol.keypair_class.from_public_bytes(
                     self.symmetric_state.decrypt_and_hash(temp)
                 )
+                self.noise_protocol.keypairs['rs'] = self.rs
 
             elif token == TOKEN_EE:
                 # Calls MixKey(DH(e, re)).
