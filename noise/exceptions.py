@@ -24,3 +24,6 @@ class NoiseMaxNonceError(Exception):
 
 class NoiseValidationError(Exception):
     pass
+
+class NoiseGetPublicKeyError(Exception):
+    pass
