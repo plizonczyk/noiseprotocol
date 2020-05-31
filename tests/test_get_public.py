@@ -3,8 +3,11 @@
 import base64
 import typing
 
+import pytest
+
 from noise.connection import NoiseConnection
 from noise.connection import Keypair
+from noise.exceptions import NoiseGetPublicKeyError
 
 
 _Keys = typing.NamedTuple(
@@ -29,10 +32,18 @@ def _do_test_for(key_type: str, keys: _Keys):
 
     initiator.start_handshake()
     responder.start_handshake()
-
     message = b'public-key-test'
+
     assert message == responder.read_message(initiator.write_message(message))
+    with pytest.raises(NoiseGetPublicKeyError):
+        initiator.get_public_bytes(Keypair.REMOTE_STATIC)
+    with pytest.raises(NoiseGetPublicKeyError):
+        responder.get_public_bytes(Keypair.REMOTE_STATIC)
+
     assert message == initiator.read_message(responder.write_message(message))
+    with pytest.raises(NoiseGetPublicKeyError):
+        responder.get_public_bytes(Keypair.REMOTE_STATIC)
+
     assert message == responder.read_message(initiator.write_message(message))
 
     # Test ability to get remote static public key,

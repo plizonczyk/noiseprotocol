@@ -5,7 +5,7 @@ from cryptography.exceptions import InvalidTag
 
 from noise.backends.default import noise_backend
 from noise.constants import MAX_MESSAGE_LEN
-from noise.exceptions import NoisePSKError, NoiseValueError, NoiseHandshakeError, NoiseInvalidMessage
+from noise.exceptions import NoisePSKError, NoiseValueError, NoiseHandshakeError, NoiseInvalidMessage, NoiseGetPublicKeyError
 from .noise_protocol import NoiseProtocol
 
 
@@ -93,6 +93,9 @@ class NoiseConnection(object):
                 self.noise_protocol.dh_fn.klass.from_public_bytes(fd.read())
 
     def get_public_bytes(self, keypair: Keypair) -> bytes:
+        the_key = self.noise_protocol.keypairs[_keypairs[keypair]]
+        if the_key is None:
+            raise NoiseGetPublicKeyError('The required key is not available or not ready yet')
         return self.noise_protocol.keypairs[_keypairs[keypair]].public_bytes
 
     def start_handshake(self):
