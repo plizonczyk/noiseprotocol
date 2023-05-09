@@ -4,7 +4,7 @@ from typing import Union, List
 from cryptography.exceptions import InvalidTag
 
 from noise.backends.default import noise_backend
-from noise.constants import MAX_MESSAGE_LEN
+from noise.constants import MAX_MESSAGE_LEN, MAX_PLAINTEXT_LEN
 from noise.exceptions import NoisePSKError, NoiseValueError, NoiseHandshakeError, NoiseInvalidMessage
 from .noise_protocol import NoiseProtocol
 
@@ -130,7 +130,7 @@ class NoiseConnection(object):
     def encrypt(self, data: bytes) -> bytes:
         if not self.handshake_finished:
             raise NoiseHandshakeError('Handshake not finished yet!')
-        if not isinstance(data, bytes) or len(data) > MAX_MESSAGE_LEN:
+        if not isinstance(data, bytes) or len(data) > MAX_PLAINTEXT_LEN:
             raise NoiseInvalidMessage('Data must be bytes and less or equal {} bytes in length'.format(MAX_MESSAGE_LEN))
         return self.noise_protocol.cipher_state_encrypt.encrypt_with_ad(None, data)
 

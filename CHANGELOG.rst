@@ -1,6 +1,13 @@
 Changelog
 =========
 
+
+Upcoming Version
+~~~~~~~~~~~~~~~~
+
+* Fix message limits for plaintext (#44, from meejah)
+
+
 .. _v0-3-1:
 
 0.3.1 - 2020-03-03
