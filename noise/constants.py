@@ -16,5 +16,7 @@ TOKEN_PSK = 'psk'
 MAX_PROTOCOL_NAME_LEN = 255
 
 MAX_MESSAGE_LEN = 65535
+# encryption adds 16 bytes of authentication data
+MAX_PLAINTEXT_LEN = 65535 - 16
 
 MAX_NONCE = 2 ** 64 - 1
